@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "750211156170",
+    "project_id": "raceweek-934fc",
+    "storage_bucket": "raceweek-934fc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:750211156170:android:02799338b0adddd7174c33",
+        "android_client_info": {
+          "package_name": "com.example.raceweek"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9KSvZWTJKJ9wQ4V8vzIeHAq_53QuURzE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

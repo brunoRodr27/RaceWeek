@@ -1,0 +1,170 @@
+package com.example.raceweek.presentation.detail
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.raceweek.domain.model.Race
+import com.example.raceweek.presentation.agenda.AgendaViewModel
+import com.example.raceweek.ui.theme.*
+
+@Composable
+fun DetailRoute(
+    raceId: String,
+    onBack: () -> Unit,
+    viewModel: AgendaViewModel = hiltViewModel()
+) {
+    val race = viewModel.getRaceById(raceId)
+    if (race != null) {
+        DetailScreen(race = race, onBack = onBack)
+    }
+}
+
+@Composable
+fun DetailScreen(
+    race: Race,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.radialGradient(
+                    colors = listOf(Color(0xFF2A2020), Color(0xFF151515), Color(0xFF0A0A0A)),
+                    radius = 900f
+                )
+            )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 54.dp, start = 16.dp, end = 16.dp, bottom = 10.dp)
+        ) {
+            Row(
+                modifier = Modifier.clickable(onClick = onBack).padding(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(text = "‹", fontSize = 20.sp, color = TextSecondary)
+                Text(text = "Voltar", fontSize = 13.sp, color = TextSecondary)
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = race.flag, fontSize = 48.sp, modifier = Modifier.padding(bottom = 8.dp))
+                Text(text = race.name, fontFamily = BreeSerif, fontSize = 22.sp, color = TextPrimary)
+                Text(text = race.location, fontSize = 12.sp, color = TextSecondary,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp))
+                Box(
+                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0x1FD44020))
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Text(text = race.category.uppercase(), fontSize = 9.sp, color = Accent, letterSpacing = 2.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatCard(label = "Data", value = race.date, modifier = Modifier.weight(1f))
+                    StatCard(label = "Largada", value = race.time, sub = "BRT", modifier = Modifier.weight(1f))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatCard(label = "Clima", value = "${race.weatherIcon} ${race.temperature}", modifier = Modifier.weight(1f))
+                    StatCard(label = "Voltas", value = "78", sub = "~305 km", modifier = Modifier.weight(1f))
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(text = "PROGRAMAÇÃO", fontSize = 10.sp, color = TextMuted, letterSpacing = 1.5.sp,
+                    modifier = Modifier.padding(bottom = 8.dp))
+
+                SessionItem("Treino Livre 1", "Sex · 10:30")
+                SessionItem("Treino Livre 2", "Sex · 14:00")
+                SessionItem("Treino Livre 3", "Sáb · 11:30")
+                SessionItem("Classificação", "Sáb · 15:00")
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "🏁 Corrida", fontSize = 13.sp, color = Accent, fontWeight = FontWeight.SemiBold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(text = race.time, fontSize = 11.sp, color = TextMuted)
+                        Box(
+                            modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0x1AD44020))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(text = "AO VIVO", fontSize = 9.sp, color = Accent)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatCard(label: String, value: String, sub: String? = null, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(BgCard)
+            .border(1.dp, Border, RoundedCornerShape(12.dp)).padding(12.dp)
+    ) {
+        Text(text = label.uppercase(), fontSize = 9.sp, color = TextMuted, letterSpacing = 1.sp)
+        Spacer(modifier = Modifier.height(5.dp))
+        Text(text = value, fontFamily = BreeSerif, fontSize = 17.sp, color = TextPrimary)
+        if (sub != null) {
+            Text(text = sub, fontSize = 10.sp, color = TextSecondary, modifier = Modifier.padding(top = 2.dp))
+        }
+    }
+}
+
+@Composable
+private fun SessionItem(name: String, time: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp).drawBehind {
+            val y = size.height
+            drawLine(color = Border, start = Offset(0f, y), end = Offset(size.width, y), strokeWidth = 1.dp.toPx())
+        },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = name, fontSize = 13.sp, color = TextPrimary)
+        Text(text = time, fontSize = 11.sp, color = TextMuted)
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0A0A0A)
+@Composable
+private fun DetailScreenPreview() {
+    DetailScreen(
+        race = Race(id = "monaco", category = "Formula 1", flag = "🇲🇨", name = "GP de Mônaco",
+            location = "Circuit de Monaco · Monte Carlo", date = "Dom, 25 Mai", time = "14:00",
+            weatherIcon = "☀️", temperature = "22°C"),
+        onBack = {}
+    )
+}

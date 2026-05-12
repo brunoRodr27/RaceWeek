@@ -1,0 +1,486 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bree+Serif&family=Inter:wght@300;400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg-deep:#0d0d0d;--bg-dark:#161616;--bg-card:#1e1e1e;--bg-card2:#252525;--bg-circle:#2a2a2a;
+  --accent:#d44020;--accent-dim:#7a2510;
+  --text-primary:#f0ede8;--text-secondary:#999;--text-muted:#555;
+  --border:#2e2e2e;--border-light:#3a3a3a;
+  --font-head:'Bree Serif',serif;--font-body:'Inter',sans-serif;
+}
+body{background:#1a1a1a;display:flex;justify-content:center;padding:20px 0;font-family:var(--font-body);}
+.phone{width:375px;height:720px;background:radial-gradient(ellipse at 30% 20%,#2a2a2a 0%,#161616 40%,#0d0d0d 100%);border-radius:36px;overflow:hidden;position:relative;border:1px solid #2e2e2e;}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;transition:opacity 0.4s;}
+.screen.hidden{opacity:0;pointer-events:none;}
+
+/* SPLASH */
+#splash{background:radial-gradient(ellipse at 40% 35%,#2c2c2c 0%,#141414 50%,#080808 100%);justify-content:center;align-items:center;gap:20px;}
+.splash-logo{width:110px;height:110px;animation:pulse 1.5s ease-in-out infinite alternate;}
+@keyframes pulse{from{transform:scale(0.95);}to{transform:scale(1.05);}}
+.splash-title{font-family:var(--font-head);font-size:30px;color:var(--text-primary);letter-spacing:2px;}
+.splash-sub{font-size:11px;color:var(--text-secondary);letter-spacing:4px;text-transform:uppercase;}
+.splash-loader{width:60px;height:2px;background:var(--bg-circle);border-radius:2px;overflow:hidden;margin-top:16px;}
+.splash-fill{height:100%;width:0;background:var(--accent);animation:fill 2.3s ease forwards;}
+@keyframes fill{to{width:100%;}}
+
+/* LAYOUT */
+.status-bar{height:44px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.status-time{font-size:13px;font-weight:600;color:var(--text-primary);}
+.top-bar{height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.top-title{font-family:var(--font-head);font-size:20px;color:var(--text-primary);letter-spacing:1px;}
+.icon-circle{width:40px;height:40px;border-radius:50%;background:var(--bg-circle);border:1px solid var(--border-light);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
+.icon-circle:hover{background:var(--bg-card2);border-color:var(--accent-dim);}
+.icon-circle:active{transform:scale(0.93);}
+
+/* BOTTOM NAV */
+.bottom-nav{height:64px;padding:0 40px;display:flex;align-items:center;justify-content:space-around;background:rgba(18,18,18,0.97);border-top:1px solid var(--border);flex-shrink:0;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:4px 20px;border-radius:12px;transition:all .2s;}
+.nav-icon-wrap{color:var(--text-muted);transition:color .2s;}
+.nav-label{font-size:10px;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;transition:color .2s;}
+.nav-item.active .nav-label,.nav-item.active .nav-icon-wrap{color:var(--accent);}
+.nav-bar{width:0;height:2px;background:transparent;border-radius:2px;transition:all .3s;margin-bottom:2px;}
+.nav-item.active .nav-bar{width:24px;background:var(--accent);}
+
+/* CONTENT */
+.content-area{flex:1;overflow-y:auto;scrollbar-width:none;}
+.content-area::-webkit-scrollbar{display:none;}
+
+/* CATEGORY TABS */
+.cat-tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;padding:0 16px;flex-shrink:0;border-bottom:1px solid var(--border);}
+.cat-tabs::-webkit-scrollbar{display:none;}
+.cat-tab{flex-shrink:0;padding:10px 14px;font-size:12px;color:var(--text-muted);cursor:pointer;position:relative;transition:color .2s;letter-spacing:.3px;white-space:nowrap;}
+.cat-tab.active{color:var(--accent);}
+.cat-tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--accent);border-radius:2px 2px 0 0;}
+.cat-tab:hover{color:var(--text-secondary);}
+
+/* SECTION LABEL */
+.sec-label{font-size:10px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin:4px 0 10px;padding:0 16px;}
+
+/* HERO CARD */
+.hero-card{margin:10px 16px 14px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:20px;padding:18px;position:relative;overflow:hidden;}
+.hero-card::after{content:'';position:absolute;right:-20px;top:-20px;width:110px;height:110px;background:radial-gradient(circle,rgba(212,64,32,0.14) 0%,transparent 70%);border-radius:50%;}
+.hero-next{font-size:9px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.hero-name{font-family:var(--font-head);font-size:21px;color:var(--text-primary);margin-bottom:3px;}
+.hero-loc{font-size:12px;color:var(--text-secondary);margin-bottom:14px;}
+.hero-countdown{display:flex;gap:10px;}
+.count-box{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:7px 10px;text-align:center;min-width:50px;}
+.count-num{font-family:var(--font-head);font-size:19px;color:var(--accent);display:block;}
+.count-unit{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+
+/* RACE CARD */
+.race-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:14px 14px 14px 18px;margin:0 16px 10px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
+.race-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);}
+.race-card:hover{border-color:var(--accent-dim);background:var(--bg-card2);transform:translateX(2px);}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.card-flag{font-size:20px;}
+.card-series{font-size:9px;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;background:rgba(212,64,32,0.12);padding:3px 8px;border-radius:4px;border:1px solid rgba(212,64,32,0.22);}
+.card-name{font-family:var(--font-head);font-size:15px;color:var(--text-primary);margin-bottom:3px;}
+.card-location{font-size:11px;color:var(--text-secondary);}
+.card-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.card-meta{display:flex;gap:14px;}
+.meta-item{display:flex;flex-direction:column;}
+.meta-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+.meta-value{font-size:12px;color:var(--text-primary);font-weight:500;margin-top:2px;}
+.weather-badge{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:4px 9px;}
+.weather-icon{font-size:13px;}
+.weather-temp{font-size:11px;color:var(--text-secondary);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px;}
+.empty-icon{font-size:32px;margin-bottom:10px;display:block;}
+
+/* CALENDAR */
+.cal-wrap{padding:12px 16px 8px;}
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.cal-month{font-family:var(--font-head);font-size:19px;color:var(--text-primary);}
+.cal-nav{display:flex;gap:8px;}
+.cal-btn{width:28px;height:28px;border-radius:50%;background:var(--bg-circle);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);font-size:12px;transition:all .2s;}
+.cal-btn:hover{background:var(--bg-card2);color:var(--text-primary);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-dow{text-align:center;font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;padding:5px 0;}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;position:relative;transition:all .15s;font-size:12px;color:var(--text-secondary);}
+.cal-day:hover{background:var(--bg-card);color:var(--text-primary);}
+.cal-day.today{color:var(--text-primary);font-weight:600;}
+.cal-day.today::after{content:'';position:absolute;bottom:3px;width:3px;height:3px;border-radius:50%;background:var(--text-secondary);}
+.cal-day.has-race{color:var(--text-primary);}
+.race-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);position:absolute;bottom:3px;}
+.cal-day.selected{background:var(--accent)!important;color:#fff!important;font-weight:600;}
+.cal-day.selected .race-dot{background:#fff;}
+.cal-day.other-month{opacity:.22;}
+.cal-events{margin-top:14px;}
+.events-label{font-size:10px;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.cal-event-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.event-accent{width:3px;height:34px;background:var(--accent);border-radius:2px;flex-shrink:0;}
+.event-flag{font-size:16px;}
+.event-info{flex:1;}
+.event-name{font-size:12px;color:var(--text-primary);font-weight:500;}
+.event-time{font-size:10px;color:var(--text-muted);margin-top:2px;}
+.event-badge{font-size:9px;background:rgba(212,64,32,0.12);color:var(--accent);padding:3px 7px;border-radius:4px;}
+
+/* DETAIL */
+#detail{background:radial-gradient(ellipse at 20% 10%,#2a2020 0%,#151515 40%,#0a0a0a 100%);}
+.detail-header{padding:54px 16px 10px;}
+.detail-back{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text-secondary);font-size:13px;}
+.detail-back:hover{color:var(--accent);}
+.detail-scroll{flex:1;overflow-y:auto;scrollbar-width:none;}
+.detail-scroll::-webkit-scrollbar{display:none;}
+.detail-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;}
+.detail-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.detail-stat-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.detail-stat-value{font-family:var(--font-head);font-size:17px;color:var(--text-primary);}
+.detail-stat-sub{font-size:10px;color:var(--text-secondary);margin-top:2px;}
+.session-item{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
+.session-name{font-size:13px;color:var(--text-primary);}
+.session-time{font-size:11px;color:var(--text-muted);}
+.session-live{font-size:9px;color:var(--accent);background:rgba(212,64,32,0.1);padding:2px 6px;border-radius:4px;}
+
+/* SETTINGS */
+#settings{background:radial-gradient(ellipse at 60% 10%,#1a2020 0%,#131313 50%,#0a0a0a 100%);}
+.settings-header{padding:54px 16px 14px;display:flex;align-items:center;gap:12px;}
+.settings-title{font-family:var(--font-head);font-size:19px;color:var(--text-primary);}
+.settings-scroll{flex:1;overflow-y:auto;scrollbar-width:none;}
+.settings-scroll::-webkit-scrollbar{display:none;}
+.settings-section{padding:0 16px;margin-bottom:22px;}
+.settings-sec-label{font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+.settings-item{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:13px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;cursor:pointer;}
+.settings-item:hover{border-color:var(--border-light);}
+.settings-item-label{font-size:13px;color:var(--text-primary);}
+.settings-item-value{font-size:12px;color:var(--text-secondary);}
+.toggle{width:38px;height:21px;border-radius:11px;background:var(--accent);position:relative;cursor:pointer;flex-shrink:0;}
+.toggle.off{background:var(--bg-circle);}
+.toggle::after{content:'';position:absolute;top:2.5px;right:2.5px;width:16px;height:16px;border-radius:50%;background:white;transition:all .2s;}
+.toggle.off::after{right:auto;left:2.5px;}
+
+/* SIDEBAR */
+.sidebar-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.6);z-index:100;opacity:0;pointer-events:none;transition:opacity .3s;}
+.sidebar-overlay.open{opacity:1;pointer-events:all;}
+.sidebar{position:absolute;left:-265px;top:0;bottom:0;width:265px;background:radial-gradient(ellipse at 0% 0%,#252525 0%,#161616 60%,#0e0e0e 100%);border-right:1px solid var(--border-light);z-index:101;transition:left .35s cubic-bezier(.25,.46,.45,.94);display:flex;flex-direction:column;padding:60px 0 20px;}
+.sidebar.open{left:0;}
+.sidebar-logo{display:flex;align-items:center;gap:12px;padding:0 20px 22px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+.sidebar-logo-text{font-family:var(--font-head);font-size:17px;color:var(--text-primary);}
+.sidebar-item{padding:11px 20px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .2s;color:var(--text-secondary);font-size:13px;}
+.sidebar-item:hover{background:rgba(255,255,255,0.04);color:var(--text-primary);}
+.sidebar-item.active{color:var(--accent);background:rgba(212,64,32,0.08);}
+.sidebar-icon{font-size:15px;width:18px;text-align:center;}
+.sidebar-divider{height:1px;background:var(--border);margin:10px 20px;}
+</style>
+
+<div class="phone">
+
+<!-- SPLASH -->
+<div class="screen" id="splash">
+  <svg class="splash-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" rx="40" fill="#1a1a1a"/>
+    <g fill="#d44020">
+      <rect x="36" y="58" width="28" height="28"/><rect x="92" y="58" width="28" height="28"/><rect x="136" y="58" width="28" height="28"/>
+      <rect x="64" y="86" width="28" height="28"/><rect x="108" y="86" width="28" height="28"/>
+      <rect x="92" y="114" width="28" height="28"/><rect x="136" y="114" width="28" height="28"/>
+      <rect x="108" y="142" width="28" height="28"/>
+    </g>
+  </svg>
+  <div class="splash-title">RACEWEEK</div>
+  <div class="splash-sub">Your Racing Calendar</div>
+  <div class="splash-loader"><div class="splash-fill"></div></div>
+</div>
+
+<!-- MAIN -->
+<div class="screen hidden" id="main">
+  <div class="status-bar">
+    <span class="status-time">19:02</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><rect x="0" y="3" width="2" height="7" fill="#999" rx="1"/><rect x="3" y="2" width="2" height="8" fill="#999" rx="1"/><rect x="6" y="1" width="2" height="9" fill="#999" rx="1"/><rect x="9" y="0" width="2" height="10" fill="#999" rx="1"/><rect x="12" y="0" width="2" height="10" fill="#555" rx="1"/></svg>
+      <svg width="18" height="10" viewBox="0 0 18 10" fill="none"><rect x="0" y="1" width="15" height="8" rx="2" stroke="#999" stroke-width="1.2"/><rect x="15.5" y="3" width="2" height="4" rx="1" fill="#999"/><rect x="1" y="2" width="11" height="6" rx="1" fill="#999"/></svg>
+    </div>
+  </div>
+  <div class="top-bar">
+    <div class="icon-circle" onclick="openSidebar()">
+      <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
+        <rect x="2" y="2" width="6" height="6" fill="#d44020"/><rect x="8" y="2" width="6" height="6" fill="#555"/>
+        <rect x="2" y="8" width="6" height="6" fill="#555"/><rect x="8" y="8" width="6" height="6" fill="#d44020"/>
+        <line x1="2" y1="2" x2="2" y2="17" stroke="#d44020" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="top-title">RACEWEEK</div>
+    <div class="icon-circle" onclick="showSettings()">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M9 11.5A2.5 2.5 0 1 0 9 6.5a2.5 2.5 0 0 0 0 5z" stroke="#aaa" stroke-width="1.3" fill="none"/>
+        <path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.22 3.22l1.41 1.41M13.36 13.36l1.42 1.42M3.22 14.78l1.41-1.41M13.36 4.64l1.42-1.42" stroke="#aaa" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- AGENDA TAB -->
+  <div id="tab-agenda" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="cat-tabs" id="catTabs">
+      <div class="cat-tab active" onclick="filterCat('Todos',this)">Todos</div>
+      <div class="cat-tab" onclick="filterCat('Formula 1',this)">Formula 1</div>
+      <div class="cat-tab" onclick="filterCat('MotoGP',this)">MotoGP</div>
+      <div class="cat-tab" onclick="filterCat('IndyCar',this)">IndyCar</div>
+      <div class="cat-tab" onclick="filterCat('Formula E',this)">Formula E</div>
+      <div class="cat-tab" onclick="filterCat('WEC',this)">WEC</div>
+      <div class="cat-tab" onclick="filterCat('NASCAR',this)">NASCAR</div>
+    </div>
+    <div class="content-area" id="agenda-content" style="padding-bottom:8px;"></div>
+  </div>
+
+  <!-- CALENDAR TAB -->
+  <div id="tab-calendar" style="display:none;flex:1;overflow:hidden;">
+    <div class="content-area">
+      <div class="cal-wrap">
+        <div class="cal-header">
+          <div class="cal-month">Maio 2026</div>
+          <div class="cal-nav">
+            <div class="cal-btn">‹</div>
+            <div class="cal-btn">›</div>
+          </div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-events" style="margin-top:14px;">
+          <div class="events-label" id="eventsLabel">Eventos · Selecione um dia</div>
+          <div id="eventsList">
+            <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:16px;">Toque num dia com ● para ver eventos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-agenda" onclick="switchTab('agenda')">
+      <div class="nav-bar"></div>
+      <div class="nav-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M6 2v4M14 2v4M2 8h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="5" y="11" width="3" height="3" rx=".5" fill="currentColor"/><rect x="9" y="11" width="3" height="3" rx=".5" fill="currentColor"/></svg>
+      </div>
+      <span class="nav-label">Agenda</span>
+    </div>
+    <div class="nav-item" id="nav-calendar" onclick="switchTab('calendar')">
+      <div class="nav-bar"></div>
+      <div class="nav-icon-wrap">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M6 2v4M14 2v4M2 8h16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="7" cy="13" r="1.2" fill="currentColor"/><circle cx="10" cy="13" r="1.2" fill="currentColor"/><circle cx="13" cy="13" r="1.2" fill="currentColor"/></svg>
+      </div>
+      <span class="nav-label">Calendário</span>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="screen hidden" id="detail">
+  <div class="detail-header">
+    <div class="detail-back" onclick="hideDetail()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Voltar
+    </div>
+  </div>
+  <div class="detail-scroll" id="detailInner"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="screen hidden" id="settings">
+  <div class="settings-header">
+    <div class="icon-circle" onclick="hideSettings()" style="width:34px;height:34px;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="settings-title">Configurações</div>
+  </div>
+  <div class="settings-scroll">
+    <div class="settings-section">
+      <div class="settings-sec-label">Notificações</div>
+      <div class="settings-item"><span class="settings-item-label">Alertas de corrida</span><div class="toggle"></div></div>
+      <div class="settings-item"><span class="settings-item-label">Aviso 1h antes</span><div class="toggle"></div></div>
+      <div class="settings-item"><span class="settings-item-label">Resultados ao vivo</span><div class="toggle off"></div></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-sec-label">Campeonatos</div>
+      <div class="settings-item"><span class="settings-item-label">Formula 1</span><span class="settings-item-value">✓ Ativo</span></div>
+      <div class="settings-item"><span class="settings-item-label">MotoGP</span><span class="settings-item-value">✓ Ativo</span></div>
+      <div class="settings-item"><span class="settings-item-label">IndyCar</span><span class="settings-item-value">✓ Ativo</span></div>
+      <div class="settings-item"><span class="settings-item-label">WEC / Le Mans</span><span class="settings-item-value">✓ Ativo</span></div>
+      <div class="settings-item"><span class="settings-item-label">Formula E</span><span class="settings-item-value">✓ Ativo</span></div>
+      <div class="settings-item"><span class="settings-item-label">NASCAR</span><span class="settings-item-value" style="color:var(--text-muted)">Desativado</span></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-sec-label">Preferências</div>
+      <div class="settings-item"><span class="settings-item-label">Fuso horário</span><span class="settings-item-value">BRT −3</span></div>
+      <div class="settings-item"><span class="settings-item-label">Idioma</span><span class="settings-item-value">Português</span></div>
+      <div class="settings-item"><span class="settings-item-label">Versão</span><span class="settings-item-value" style="color:var(--text-muted)">1.0.0</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <svg width="34" height="34" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+      <rect width="36" height="36" rx="8" fill="#1e1e1e"/>
+      <g fill="#d44020"><rect x="6" y="10" width="5" height="5"/><rect x="16" y="10" width="5" height="5"/><rect x="25" y="10" width="5" height="5"/><rect x="11" y="15" width="5" height="5"/><rect x="20" y="15" width="5" height="5"/><rect x="16" y="20" width="5" height="5"/><rect x="25" y="20" width="5" height="5"/><rect x="20" y="25" width="5" height="5"/></g>
+    </svg>
+    <span class="sidebar-logo-text">RaceWeek</span>
+  </div>
+  <div class="sidebar-item active"><span class="sidebar-icon">🏎</span>Agenda</div>
+  <div class="sidebar-item" onclick="closeSidebar();switchTab('calendar')"><span class="sidebar-icon">📅</span>Calendário</div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-item"><span class="sidebar-icon">🏆</span>Campeonatos</div>
+  <div class="sidebar-item"><span class="sidebar-icon">⏱</span>Resultados</div>
+  <div class="sidebar-item"><span class="sidebar-icon">⭐</span>Favoritos</div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-item"><span class="sidebar-icon">🔔</span>Notificações</div>
+  <div class="sidebar-item" onclick="closeSidebar();showSettings()"><span class="sidebar-icon">⚙️</span>Configurações</div>
+</div>
+
+</div>
+
+<script>
+const races = [
+  {cat:'Formula 1',flag:'🇲🇨',name:'GP de Mônaco',loc:'Circuit de Monaco · Monte Carlo',date:'Dom, 25 Mai',time:'14:00',wx:'☀️',temp:'22°C',hero:true},
+  {cat:'IndyCar',flag:'🇺🇸',name:'Indianapolis 500',loc:'Indianapolis Motor Speedway',date:'Dom, 25 Mai',time:'18:00',wx:'⛅',temp:'24°C'},
+  {cat:'Formula E',flag:'🇩🇪',name:'E-Prix de Berlim',loc:'Tempelhof Airport Street Circuit',date:'Sáb, 31 Mai',time:'15:00',wx:'🌥️',temp:'18°C'},
+  {cat:'Formula 1',flag:'🇨🇦',name:'GP do Canadá',loc:'Circuit Gilles Villeneuve',date:'Dom, 15 Jun',time:'14:00',wx:'☀️',temp:'21°C'},
+  {cat:'WEC',flag:'🇫🇷',name:'24h de Le Mans',loc:'Circuit de la Sarthe',date:'Sáb, 14 Jun',time:'16:00',wx:'🌧️',temp:'17°C'},
+  {cat:'MotoGP',flag:'🇮🇹',name:'GP da Itália',loc:'Mugello Circuit · Toscana',date:'Dom, 1 Jun',time:'14:00',wx:'☀️',temp:'26°C'},
+  {cat:'NASCAR',flag:'🇺🇸',name:'Coca-Cola 600',loc:'Charlotte Motor Speedway',date:'Dom, 25 Mai',time:'19:00',wx:'⛅',temp:'27°C'},
+  {cat:'Formula E',flag:'🇬🇧',name:'E-Prix de Londres',loc:'ExCeL Circuit · London',date:'Sáb, 28 Jun',time:'16:00',wx:'🌥️',temp:'16°C'},
+  {cat:'IndyCar',flag:'🇺🇸',name:'Detroit Grand Prix',loc:'Belle Isle Street Circuit',date:'Dom, 1 Jun',time:'14:30',wx:'⛅',temp:'22°C'},
+];
+
+const calRaces = {
+  4:[{flag:'🇦🇿',name:'GP do Azerbaijão',time:'12:00',series:'F1'}],
+  11:[{flag:'🇪🇸',name:'GP da Espanha',time:'15:00',series:'F1'},{flag:'🇯🇵',name:'GP do Japão',time:'09:00',series:'MotoGP'}],
+  25:[{flag:'🇲🇨',name:'GP de Mônaco',time:'14:00',series:'F1'},{flag:'🇺🇸',name:'Indy 500',time:'18:00',series:'IndyCar'},{flag:'🇺🇸',name:'Coca-Cola 600',time:'19:00',series:'NASCAR'}],
+  31:[{flag:'🇩🇪',name:'E-Prix de Berlim',time:'15:00',series:'Formula E'}]
+};
+
+let currentCat = 'Todos';
+
+function renderAgenda(cat){
+  const el = document.getElementById('agenda-content');
+  const list = cat==='Todos' ? races : races.filter(r=>r.cat===cat);
+  const hero = races.find(r=>r.hero);
+  let html = '';
+
+  if(cat==='Todos' && hero){
+    html+=`<div class="sec-label" style="margin-top:12px;">Próxima Corrida</div>
+    <div class="hero-card">
+      <div class="hero-next">↑ Próximo Evento</div>
+      <div class="hero-name">${hero.flag} ${hero.name}</div>
+      <div class="hero-loc">${hero.loc}</div>
+      <div class="hero-countdown">
+        <div class="count-box"><span class="count-num">02</span><span class="count-unit">Dias</span></div>
+        <div class="count-box"><span class="count-num">14</span><span class="count-unit">Horas</span></div>
+        <div class="count-box"><span class="count-num">38</span><span class="count-unit">Min</span></div>
+      </div>
+    </div>`;
+  }
+
+  html+=`<div class="sec-label" style="margin-top:${cat==='Todos'?'4':'12'}px;">${cat==='Todos'?'Agenda da Semana':cat+' · Próximas Corridas'}</div>`;
+
+  if(list.length===0){
+    html+=`<div class="empty-state"><span class="empty-icon">🏁</span>Nenhuma corrida agendada<br>para esta categoria.</div>`;
+  } else {
+    list.forEach(r=>{
+      html+=`<div class="race-card" onclick="showDetail('${r.name}','${r.flag}','${r.name}','${r.loc}','${r.cat}','${r.date}','${r.time}','${r.wx}','${r.temp}')">
+        <div class="card-top"><span class="card-flag">${r.flag}</span><span class="card-series">${r.cat}</span></div>
+        <div class="card-name">${r.name}</div>
+        <div class="card-location">${r.loc}</div>
+        <div class="card-bottom">
+          <div class="card-meta">
+            <div class="meta-item"><span class="meta-label">Data</span><span class="meta-value">${r.date}</span></div>
+            <div class="meta-item"><span class="meta-label">Largada</span><span class="meta-value">${r.time}</span></div>
+          </div>
+          <div class="weather-badge"><span class="weather-icon">${r.wx}</span><span class="weather-temp">${r.temp}</span></div>
+        </div>
+      </div>`;
+    });
+  }
+  el.innerHTML = html;
+}
+
+function filterCat(cat, el){
+  currentCat = cat;
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderAgenda(cat);
+}
+
+function switchTab(tab){
+  const ag = document.getElementById('tab-agenda');
+  const cal = document.getElementById('tab-calendar');
+  const navAg = document.getElementById('nav-agenda');
+  const navCal = document.getElementById('nav-calendar');
+  if(tab==='agenda'){
+    ag.style.display='flex';cal.style.display='none';
+    navAg.classList.add('active');navCal.classList.remove('active');
+  } else {
+    cal.style.display='flex';ag.style.display='none';
+    navCal.classList.add('active');navAg.classList.remove('active');
+  }
+}
+
+function buildCalendar(){
+  const grid = document.getElementById('calGrid');
+  const dows=['D','S','T','Q','Q','S','S'];
+  let html=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  const firstDay=new Date(2026,4,1).getDay();
+  for(let i=firstDay-1;i>=0;i--) html+=`<div class="cal-day other-month">${30-i}</div>`;
+  for(let d=1;d<=31;d++){
+    const isToday=d===4, hasRace=calRaces[d];
+    html+=`<div class="cal-day${isToday?' today':''}${hasRace?' has-race':''}" onclick="selectDay(${d})">${d}${hasRace?'<div class="race-dot"></div>':''}</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function selectDay(d){
+  document.querySelectorAll('#calGrid .cal-day:not(.other-month)').forEach((el,i)=>{
+    el.classList.toggle('selected',i===d-1);
+  });
+  const ev = calRaces[d];
+  document.getElementById('eventsLabel').textContent=`Eventos · ${d} de Maio`;
+  document.getElementById('eventsList').innerHTML = ev
+    ? ev.map(e=>`<div class="cal-event-card"><div class="event-accent"></div><div class="event-flag">${e.flag}</div><div class="event-info"><div class="event-name">${e.name}</div><div class="event-time">${e.time} · BRT</div></div><div class="event-badge">${e.series}</div></div>`).join('')
+    : '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:14px;">Nenhuma corrida neste dia</div>';
+}
+
+function showDetail(id,flag,name,loc,series,date,time,wx,temp){
+  document.getElementById('detailInner').innerHTML=`
+    <div style="text-align:center;padding:10px 16px 0;">
+      <div style="font-size:48px;margin-bottom:8px;">${flag}</div>
+      <div style="font-family:var(--font-head);font-size:22px;color:var(--text-primary);margin-bottom:4px;">${name}</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${loc}</div>
+      <span style="font-size:9px;color:var(--accent);background:rgba(212,64,32,0.12);padding:4px 12px;border-radius:4px;letter-spacing:2px;text-transform:uppercase;">${series}</span>
+    </div>
+    <div style="padding:0 16px 20px;">
+      <div class="detail-stat-row">
+        <div class="detail-stat"><div class="detail-stat-label">Data</div><div class="detail-stat-value">${date}</div></div>
+        <div class="detail-stat"><div class="detail-stat-label">Largada</div><div class="detail-stat-value">${time}</div><div class="detail-stat-sub">BRT</div></div>
+        <div class="detail-stat"><div class="detail-stat-label">Clima</div><div class="detail-stat-value">${wx} ${temp}</div></div>
+        <div class="detail-stat"><div class="detail-stat-label">Voltas</div><div class="detail-stat-value">78</div><div class="detail-stat-sub">~305 km</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin:14px 0 8px;">Programação</div>
+      <div class="session-item"><span class="session-name">Treino Livre 1</span><span class="session-time">Sex · 10:30</span></div>
+      <div class="session-item"><span class="session-name">Treino Livre 2</span><span class="session-time">Sex · 14:00</span></div>
+      <div class="session-item"><span class="session-name">Treino Livre 3</span><span class="session-time">Sáb · 11:30</span></div>
+      <div class="session-item"><span class="session-name">Classificação</span><span class="session-time">Sáb · 15:00</span></div>
+      <div class="session-item" style="border-bottom:none;">
+        <span class="session-name" style="color:var(--accent);font-weight:600;">🏁 Corrida</span>
+        <div style="display:flex;align-items:center;gap:8px;"><span class="session-time">${time}</span><span class="session-live">AO VIVO</span></div>
+      </div>
+    </div>`;
+  document.getElementById('main').classList.add('hidden');
+  document.getElementById('detail').classList.remove('hidden');
+}
+function hideDetail(){document.getElementById('detail').classList.add('hidden');document.getElementById('main').classList.remove('hidden');}
+function showSettings(){document.getElementById('main').classList.add('hidden');document.getElementById('settings').classList.remove('hidden');}
+function hideSettings(){document.getElementById('settings').classList.add('hidden');document.getElementById('main').classList.remove('hidden');}
+function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sidebarOverlay').classList.add('open');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
+
+setTimeout(()=>{
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('main').classList.remove('hidden');
+  renderAgenda('Todos');
+  buildCalendar();
+},2400);
+
+document.querySelectorAll('.toggle').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('off')));
+</script>

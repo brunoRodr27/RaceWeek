@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Checkered flag logo matching Logo1.jpg / Logo2.png -->
+    <!-- Row 0: 3 squares -->
+    <path android:fillColor="#D44020" android:pathData="M20,26 h18 v18 h-18 z"/>
+    <path android:fillColor="#D44020" android:pathData="M44,26 h18 v18 h-18 z"/>
+    <path android:fillColor="#D44020" android:pathData="M68,26 h18 v18 h-18 z"/>
+    <!-- Row 1: 2 squares (offset) -->
+    <path android:fillColor="#D44020" android:pathData="M32,44 h18 v18 h-18 z"/>
+    <path android:fillColor="#D44020" android:pathData="M56,44 h18 v18 h-18 z"/>
+    <!-- Row 2: 2 squares -->
+    <path android:fillColor="#D44020" android:pathData="M56,62 h18 v18 h-18 z"/>
+    <path android:fillColor="#D44020" android:pathData="M44,62 h18 v0 h-18 z"/>
+    <!-- Row 3: 1 square -->
+    <path android:fillColor="#D44020" android:pathData="M44,80 h18 v18 h-18 z"/>
+    <path android:fillColor="#D44020" android:pathData="M68,62 h18 v18 h-18 z"/>
+</vector>
