@@ -31,9 +31,10 @@ fun MainRoute(
     viewModel: AgendaViewModel = hiltViewModel()
 ) {
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val categories by viewModel.categories.collectAsState()
     MainScreen(
         selectedCategory = selectedCategory,
-        categories = viewModel.categories,
+        categories = categories,
         races = viewModel.filteredRaces(selectedCategory),
         heroRace = viewModel.races.find { it.isHero },
         calendarRaces = viewModel.calendarRaces,

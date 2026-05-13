@@ -1,21 +1,37 @@
 package com.example.raceweek.presentation.agenda
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.raceweek.domain.model.CalendarEvent
 import com.example.raceweek.domain.model.Race
+import com.example.raceweek.domain.usecase.GetCategoriesUseCase
+import com.example.raceweek.domain.usecase.SyncCategoriesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AgendaViewModel @Inject constructor() : ViewModel() {
-
-    val categories = listOf("Todos", "Formula 1", "MotoGP", "IndyCar", "Formula E", "WEC", "NASCAR")
+class AgendaViewModel @Inject constructor(
+    getCategoriesUseCase: GetCategoriesUseCase,
+    private val syncCategoriesUseCase: SyncCategoriesUseCase
+) : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow("Todos")
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
+
+    val categories: StateFlow<List<String>> = getCategoriesUseCase()
+        .map { list -> listOf("Todos") + list.map { it.description } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = listOf("Todos")
+        )
 
     val races = listOf(
         Race(id = "monaco_f1", category = "Formula 1", flag = "🇲🇨", name = "GP de Mônaco",
@@ -60,6 +76,12 @@ class AgendaViewModel @Inject constructor() : ViewModel() {
         ),
         31 to listOf(CalendarEvent("🇩🇪", "E-Prix de Berlim", "15:00", "Formula E"))
     )
+
+    init {
+        viewModelScope.launch {
+            runCatching { syncCategoriesUseCase() }
+        }
+    }
 
     fun selectCategory(cat: String) {
         _selectedCategory.value = cat
