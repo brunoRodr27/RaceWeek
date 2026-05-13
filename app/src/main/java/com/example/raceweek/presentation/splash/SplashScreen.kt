@@ -25,7 +25,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashRoute(onSplashFinished: () -> Unit) {
     LaunchedEffect(Unit) {
-        delay(2400)
+        delay(1400)
         onSplashFinished()
     }
     SplashScreen()
@@ -87,7 +87,7 @@ fun SplashScreen(modifier: Modifier = Modifier) {
 private fun LoaderBar() {
     val progress = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        progress.animateTo(1f, animationSpec = tween(2300))
+        progress.animateTo(1f, animationSpec = tween(1300))
     }
     Box(
         modifier = Modifier

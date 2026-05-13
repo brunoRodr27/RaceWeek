@@ -35,7 +35,7 @@ fun MainRoute(
     MainScreen(
         selectedCategory = selectedCategory,
         categories = categories,
-        races = viewModel.filteredRaces(selectedCategory),
+        allRaces = viewModel.races,
         heroRace = viewModel.races.find { it.isHero },
         calendarRaces = viewModel.calendarRaces,
         onCategorySelect = viewModel::selectCategory,
@@ -48,7 +48,7 @@ fun MainRoute(
 fun MainScreen(
     selectedCategory: String,
     categories: List<String>,
-    races: List<com.example.raceweek.domain.model.Race>,
+    allRaces: List<com.example.raceweek.domain.model.Race>,
     heroRace: com.example.raceweek.domain.model.Race?,
     calendarRaces: Map<Int, List<com.example.raceweek.domain.model.CalendarEvent>>,
     onCategorySelect: (String) -> Unit,
@@ -80,7 +80,7 @@ fun MainScreen(
                     BottomTab.AGENDA -> AgendaScreen(
                         categories = categories,
                         selectedCategory = selectedCategory,
-                        races = races,
+                        allRaces = allRaces,
                         heroRace = heroRace,
                         onCategorySelect = onCategorySelect,
                         onRaceClick = onRaceClick
@@ -167,7 +167,7 @@ private fun MainScreenPreview() {
     MainScreen(
         selectedCategory = "Todos",
         categories = listOf("Todos", "Formula 1", "MotoGP"),
-        races = emptyList(),
+        allRaces = emptyList(),
         heroRace = null,
         calendarRaces = emptyMap(),
         onCategorySelect = {},
