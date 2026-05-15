@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import com.example.raceweek.R
+import com.example.raceweek.domain.model.HeroRaceInfo
 import com.example.raceweek.domain.model.Race
 import com.example.raceweek.presentation.components.CategoryTabs
 import com.example.raceweek.presentation.components.HeroCard
@@ -28,7 +29,7 @@ fun AgendaScreen(
     categories: List<String>,
     selectedCategory: String,
     allRaces: List<Race>,
-    heroRace: Race?,
+    heroRaceInfo: HeroRaceInfo?,
     onCategorySelect: (String) -> Unit,
     onRaceClick: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -39,7 +40,7 @@ fun AgendaScreen(
     )
     val scope = rememberCoroutineScope()
 
-    // Swipe → notifica o ViewModel apenas quando a animação termina (settledPage evita valores intermediários)
+    // Swipe → notifica o ViewModel apenas quando a animação termina
     LaunchedEffect(pagerState.settledPage) {
         val category = categories.getOrNull(pagerState.settledPage) ?: return@LaunchedEffect
         onCategorySelect(category)
@@ -65,7 +66,7 @@ fun AgendaScreen(
             AgendaPageContent(
                 selectedCategory = category,
                 races = races,
-                heroRace = if (category == "Todos") heroRace else null,
+                heroRaceInfo = if (category == "Todos") heroRaceInfo else null,
                 onRaceClick = onRaceClick
             )
         }
@@ -76,21 +77,21 @@ fun AgendaScreen(
 private fun AgendaPageContent(
     selectedCategory: String,
     races: List<Race>,
-    heroRace: Race?,
+    heroRaceInfo: HeroRaceInfo?,
     onRaceClick: (String) -> Unit
 ) {
     LazyColumn(
         contentPadding = PaddingValues(bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        if (selectedCategory == "Todos" && heroRace != null) {
+        if (selectedCategory == "Todos" && heroRaceInfo != null) {
             item {
                 SectionLabel(
-                    text = stringResource(R.string.next_race),
+                    text = stringResource(R.string.next_races),
                     modifier = Modifier.padding(top = 12.dp)
                 )
             }
-            item { HeroCard(race = heroRace) }
+            item { HeroCard(heroRace = heroRaceInfo) }
         }
 
         item {
@@ -116,9 +117,9 @@ private fun AgendaPageContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(40.dp),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(text = "🏁", fontSize = 32.sp)
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
@@ -174,7 +175,13 @@ private fun AgendaScreenPreview() {
         categories = listOf("Todos", "Formula 1", "MotoGP"),
         selectedCategory = "Todos",
         allRaces = races,
-        heroRace = races.first(),
+        heroRaceInfo = HeroRaceInfo(
+            flagResName = "ic_monaco",
+            name = "GP de Mônaco",
+            country = "Monte Carlo",
+            location = "Circuit de Monaco",
+            raceTimestamp = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L
+        ),
         onCategorySelect = {},
         onRaceClick = {}
     )

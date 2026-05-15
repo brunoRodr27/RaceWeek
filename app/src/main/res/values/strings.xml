@@ -5,6 +5,11 @@
     <string name="description_app">Seu calendário de corridas</string>
     
     // Agenda Screen
-    <string name="next_race">Próxima Corrida</string>
-    <string name="next_races">Próximas Corridas</string>
+    <string name="next_races">Próximas corridas</string>
+
+    // Hero Card
+    <string name="next_event">Próximo evento</string>
+    <string name="days">Dias</string>
+    <string name="hours">Horas</string>
+    <string name="minutes">Minutos</string>
 </resources>

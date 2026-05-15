@@ -1,8 +1,10 @@
 package com.example.raceweek.presentation.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -10,19 +12,40 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.raceweek.domain.model.Race
+import com.example.raceweek.R
+import com.example.raceweek.domain.model.HeroRaceInfo
 import com.example.raceweek.ui.theme.*
 import kotlinx.coroutines.delay
 
 @Composable
-fun HeroCard(race: Race, modifier: Modifier = Modifier) {
-    var days by remember { mutableStateOf("02") }
-    var hours by remember { mutableStateOf("14") }
-    var mins by remember { mutableStateOf("38") }
+fun HeroCard(heroRace: HeroRaceInfo, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+
+    // Atualiza a cada minuto para manter o countdown preciso
+    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000L)
+            currentTime = System.currentTimeMillis()
+        }
+    }
+
+    val diff = (heroRace.raceTimestamp - currentTime).coerceAtLeast(0L)
+    val totalMinutes = diff / 60_000L
+    val days = totalMinutes / (60 * 24)
+    val hours = (totalMinutes % (60 * 24)) / 60
+    val mins = totalMinutes % 60
+
+    val flagResId = remember(heroRace.flagResName) {
+        context.resources.getIdentifier(heroRace.flagResName, "mipmap", context.packageName)
+    }
 
     Box(
         modifier = modifier
@@ -35,29 +58,50 @@ fun HeroCard(race: Race, modifier: Modifier = Modifier) {
     ) {
         Column {
             Text(
-                text = "↑ PRÓXIMO EVENTO",
+                text = stringResource(R.string.next_event).uppercase(),
                 fontSize = 9.sp,
                 color = Accent,
                 letterSpacing = 2.sp,
                 fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (flagResId != 0) {
+                    Image(
+                        painter = painterResource(id = flagResId),
+                        contentDescription = heroRace.name,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(
+                    text = heroRace.name,
+                    fontFamily = BreeSerif,
+                    fontSize = 21.sp,
+                    color = TextPrimary
+                )
+            }
             Text(
-                text = "${race.flag} ${race.name}",
-                fontFamily = BreeSerif,
-                fontSize = 21.sp,
-                color = TextPrimary
-            )
-            Text(
-                text = race.location,
+                text = "${heroRace.country} · ${heroRace.location}",
                 fontSize = 12.sp,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                CountBox(value = days, unit = "Dias")
-                CountBox(value = hours, unit = "Horas")
-                CountBox(value = mins, unit = "Min")
+                CountBox(
+                    value = days.toString().padStart(2, '0'),
+                    unit = stringResource(R.string.days)
+                )
+                CountBox(
+                    value = hours.toString().padStart(2, '0'),
+                    unit = stringResource(R.string.hours)
+                )
+                CountBox(
+                    value = mins.toString().padStart(2, '0'),
+                    unit = stringResource(R.string.minutes)
+                )
             }
         }
     }
@@ -95,17 +139,12 @@ fun CountBox(value: String, unit: String) {
 @Composable
 private fun HeroCardPreview() {
     HeroCard(
-        race = Race(
-            id = "monaco",
-            category = "Formula 1",
-            flag = "🇲🇨",
+        heroRace = HeroRaceInfo(
+            flagResName = "ic_monaco",
             name = "GP de Mônaco",
-            location = "Circuit de Monaco · Monte Carlo",
-            date = "Dom, 25 Mai",
-            time = "14:00",
-            weatherIcon = "☀️",
-            temperature = "22°C",
-            isHero = true
+            country = "Monte Carlo",
+            location = "Circuit de Monaco",
+            raceTimestamp = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L + 14 * 60 * 60 * 1000L
         )
     )
 }

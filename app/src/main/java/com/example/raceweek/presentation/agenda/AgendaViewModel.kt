@@ -3,8 +3,10 @@ package com.example.raceweek.presentation.agenda
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.raceweek.domain.model.CalendarEvent
+import com.example.raceweek.domain.model.HeroRaceInfo
 import com.example.raceweek.domain.model.Race
 import com.example.raceweek.domain.usecase.GetCategoriesUseCase
+import com.example.raceweek.domain.usecase.GetNextRaceUseCase
 import com.example.raceweek.domain.usecase.SyncCategoriesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AgendaViewModel @Inject constructor(
     getCategoriesUseCase: GetCategoriesUseCase,
-    private val syncCategoriesUseCase: SyncCategoriesUseCase
+    private val syncCategoriesUseCase: SyncCategoriesUseCase,
+    private val getNextRaceUseCase: GetNextRaceUseCase
 ) : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow("Todos")
@@ -32,6 +35,9 @@ class AgendaViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = listOf("Todos")
         )
+
+    private val _heroRaceInfo = MutableStateFlow<HeroRaceInfo?>(null)
+    val heroRaceInfo: StateFlow<HeroRaceInfo?> = _heroRaceInfo.asStateFlow()
 
     val races = listOf(
         Race(id = "monaco_f1", category = "Formula 1", flag = "🇲🇨", name = "GP de Mônaco",
@@ -80,6 +86,9 @@ class AgendaViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             runCatching { syncCategoriesUseCase() }
+        }
+        viewModelScope.launch {
+            _heroRaceInfo.value = getNextRaceUseCase()
         }
     }
 
