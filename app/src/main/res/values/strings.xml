@@ -16,4 +16,8 @@
     // Race Card
     <string name="date">Data</string>
     <string name="start">Largada</string>
+
+    // Bottom Nav Bar
+    <string name="agenda">Agenda</string>
+    <string name="calendar">Calendário</string>
 </resources>

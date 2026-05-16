@@ -6,8 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
@@ -20,10 +18,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.raceweek.R
 import com.example.raceweek.ui.theme.Accent
 import com.example.raceweek.ui.theme.Border
 import com.example.raceweek.ui.theme.TextMuted
@@ -58,15 +59,15 @@ fun BottomNavBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             NavItem(
-                label = "Agenda",
+                label = stringResource(R.string.agenda),
                 isSelected = selectedTab == BottomTab.AGENDA,
-                icon = Icons.Default.DateRange,
+                icon = painterResource(R.drawable.ic_agenda),
                 onClick = { onTabSelected(BottomTab.AGENDA) }
             )
             NavItem(
-                label = "Calendário",
+                label = stringResource(R.string.calendar),
                 isSelected = selectedTab == BottomTab.CALENDAR,
-                icon = Icons.Default.DateRange,
+                icon = painterResource(R.drawable.ic_calendar),
                 onClick = { onTabSelected(BottomTab.CALENDAR) }
             )
         }
@@ -78,7 +79,7 @@ fun BottomNavBar(
 private fun NavItem(
     label: String,
     isSelected: Boolean,
-    icon: ImageVector,
+    icon: Painter,
     onClick: () -> Unit
 ) {
     val color by animateColorAsState(
@@ -105,7 +106,7 @@ private fun NavItem(
                 .background(if (isSelected) Accent else Color.Transparent)
         )
         CompositionLocalProvider(LocalContentColor provides color) {
-            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Icon(painter = icon, contentDescription = null, modifier = Modifier.size(20.dp))
         }
         Text(
             text = label.uppercase(),
