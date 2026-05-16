@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.raceweek.domain.model.HeroRaceInfo
+import com.example.raceweek.domain.model.UpcomingRace
 import com.example.raceweek.presentation.agenda.AgendaScreen
 import com.example.raceweek.presentation.agenda.AgendaViewModel
 import com.example.raceweek.presentation.calendar.CalendarRoute
@@ -34,10 +35,11 @@ fun MainRoute(
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val heroRaceInfo by viewModel.heroRaceInfo.collectAsState()
+    val upcomingRaces by viewModel.upcomingRaces.collectAsState()
     MainScreen(
         selectedCategory = selectedCategory,
         categories = categories,
-        allRaces = viewModel.races,
+        upcomingRaces = upcomingRaces,
         heroRaceInfo = heroRaceInfo,
         calendarRaces = viewModel.calendarRaces,
         onCategorySelect = viewModel::selectCategory,
@@ -50,7 +52,7 @@ fun MainRoute(
 fun MainScreen(
     selectedCategory: String,
     categories: List<String>,
-    allRaces: List<com.example.raceweek.domain.model.Race>,
+    upcomingRaces: List<UpcomingRace>,
     heroRaceInfo: HeroRaceInfo?,
     calendarRaces: Map<Int, List<com.example.raceweek.domain.model.CalendarEvent>>,
     onCategorySelect: (String) -> Unit,
@@ -82,7 +84,7 @@ fun MainScreen(
                     BottomTab.AGENDA -> AgendaScreen(
                         categories = categories,
                         selectedCategory = selectedCategory,
-                        allRaces = allRaces,
+                        allRaces = upcomingRaces,
                         heroRaceInfo = heroRaceInfo,
                         onCategorySelect = onCategorySelect,
                         onRaceClick = onRaceClick
@@ -169,7 +171,7 @@ private fun MainScreenPreview() {
     MainScreen(
         selectedCategory = "Todos",
         categories = listOf("Todos", "Formula 1", "MotoGP"),
-        allRaces = emptyList(),
+        upcomingRaces = emptyList(),
         heroRaceInfo = null,
         calendarRaces = emptyMap(),
         onCategorySelect = {},

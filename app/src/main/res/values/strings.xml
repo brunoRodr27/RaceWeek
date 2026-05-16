@@ -12,4 +12,8 @@
     <string name="days">Dias</string>
     <string name="hours">Horas</string>
     <string name="minutes">Minutos</string>
+
+    // Race Card
+    <string name="date">Data</string>
+    <string name="start">Largada</string>
 </resources>

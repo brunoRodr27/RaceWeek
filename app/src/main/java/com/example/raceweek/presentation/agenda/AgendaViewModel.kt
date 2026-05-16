@@ -4,9 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.raceweek.domain.model.CalendarEvent
 import com.example.raceweek.domain.model.HeroRaceInfo
-import com.example.raceweek.domain.model.Race
+import com.example.raceweek.domain.model.UpcomingRace
 import com.example.raceweek.domain.usecase.GetCategoriesUseCase
 import com.example.raceweek.domain.usecase.GetNextRaceUseCase
+import com.example.raceweek.domain.usecase.GetUpcomingRacesUseCase
 import com.example.raceweek.domain.usecase.SyncCategoriesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,8 @@ import javax.inject.Inject
 class AgendaViewModel @Inject constructor(
     getCategoriesUseCase: GetCategoriesUseCase,
     private val syncCategoriesUseCase: SyncCategoriesUseCase,
-    private val getNextRaceUseCase: GetNextRaceUseCase
+    private val getNextRaceUseCase: GetNextRaceUseCase,
+    private val getUpcomingRacesUseCase: GetUpcomingRacesUseCase
 ) : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow("Todos")
@@ -39,35 +41,8 @@ class AgendaViewModel @Inject constructor(
     private val _heroRaceInfo = MutableStateFlow<HeroRaceInfo?>(null)
     val heroRaceInfo: StateFlow<HeroRaceInfo?> = _heroRaceInfo.asStateFlow()
 
-    val races = listOf(
-        Race(id = "monaco_f1", category = "Formula 1", flag = "🇲🇨", name = "GP de Mônaco",
-            location = "Circuit de Monaco · Monte Carlo", date = "Dom, 25 Mai",
-            time = "14:00", weatherIcon = "☀️", temperature = "22°C", isHero = true),
-        Race(id = "indy500", category = "IndyCar", flag = "🇺🇸", name = "Indianapolis 500",
-            location = "Indianapolis Motor Speedway", date = "Dom, 25 Mai",
-            time = "18:00", weatherIcon = "⛅", temperature = "24°C"),
-        Race(id = "berlin_fe", category = "Formula E", flag = "🇩🇪", name = "E-Prix de Berlim",
-            location = "Tempelhof Airport Street Circuit", date = "Sáb, 31 Mai",
-            time = "15:00", weatherIcon = "🌥️", temperature = "18°C"),
-        Race(id = "canada_f1", category = "Formula 1", flag = "🇨🇦", name = "GP do Canadá",
-            location = "Circuit Gilles Villeneuve", date = "Dom, 15 Jun",
-            time = "14:00", weatherIcon = "☀️", temperature = "21°C"),
-        Race(id = "lemans_wec", category = "WEC", flag = "🇫🇷", name = "24h de Le Mans",
-            location = "Circuit de la Sarthe", date = "Sáb, 14 Jun",
-            time = "16:00", weatherIcon = "🌧️", temperature = "17°C"),
-        Race(id = "italy_motogp", category = "MotoGP", flag = "🇮🇹", name = "GP da Itália",
-            location = "Mugello Circuit · Toscana", date = "Dom, 1 Jun",
-            time = "14:00", weatherIcon = "☀️", temperature = "26°C"),
-        Race(id = "cola600_nascar", category = "NASCAR", flag = "🇺🇸", name = "Coca-Cola 600",
-            location = "Charlotte Motor Speedway", date = "Dom, 25 Mai",
-            time = "19:00", weatherIcon = "⛅", temperature = "27°C"),
-        Race(id = "london_fe", category = "Formula E", flag = "🇬🇧", name = "E-Prix de Londres",
-            location = "ExCeL Circuit · London", date = "Sáb, 28 Jun",
-            time = "16:00", weatherIcon = "🌥️", temperature = "16°C"),
-        Race(id = "detroit_indycar", category = "IndyCar", flag = "🇺🇸", name = "Detroit Grand Prix",
-            location = "Belle Isle Street Circuit", date = "Dom, 1 Jun",
-            time = "14:30", weatherIcon = "⛅", temperature = "22°C"),
-    )
+    private val _upcomingRaces = MutableStateFlow<List<UpcomingRace>>(emptyList())
+    val upcomingRaces: StateFlow<List<UpcomingRace>> = _upcomingRaces.asStateFlow()
 
     val calendarRaces: Map<Int, List<CalendarEvent>> = mapOf(
         4 to listOf(CalendarEvent("🇦🇿", "GP do Azerbaijão", "12:00", "F1")),
@@ -84,20 +59,14 @@ class AgendaViewModel @Inject constructor(
     )
 
     init {
-        viewModelScope.launch {
-            runCatching { syncCategoriesUseCase() }
-        }
-        viewModelScope.launch {
-            _heroRaceInfo.value = getNextRaceUseCase()
-        }
+        viewModelScope.launch { runCatching { syncCategoriesUseCase() } }
+        viewModelScope.launch { _heroRaceInfo.value = getNextRaceUseCase() }
+        viewModelScope.launch { _upcomingRaces.value = getUpcomingRacesUseCase() }
     }
 
     fun selectCategory(cat: String) {
         _selectedCategory.value = cat
     }
 
-    fun filteredRaces(cat: String): List<Race> =
-        if (cat == "Todos") races else races.filter { it.category == cat }
-
-    fun getRaceById(id: String): Race? = races.find { it.id == id }
+    fun getRaceById(id: String): UpcomingRace? = _upcomingRaces.value.find { it.id == id }
 }

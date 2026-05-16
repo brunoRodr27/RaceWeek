@@ -85,6 +85,7 @@ dependencies {
 
     // Coroutines
     implementation(libs.coroutines.android)
+    implementation(libs.coroutines.play.services)
 
     // Lifecycle ViewModel
     implementation(libs.lifecycle.viewmodel.compose)

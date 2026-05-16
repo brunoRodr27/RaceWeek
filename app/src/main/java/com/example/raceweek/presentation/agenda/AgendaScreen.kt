@@ -1,23 +1,28 @@
 package com.example.raceweek.presentation.agenda
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import com.example.raceweek.R
 import com.example.raceweek.domain.model.HeroRaceInfo
-import com.example.raceweek.domain.model.Race
+import com.example.raceweek.domain.model.UpcomingRace
 import com.example.raceweek.presentation.components.CategoryTabs
 import com.example.raceweek.presentation.components.HeroCard
 import com.example.raceweek.presentation.components.RaceCard
@@ -28,7 +33,7 @@ import com.example.raceweek.ui.theme.TextMuted
 fun AgendaScreen(
     categories: List<String>,
     selectedCategory: String,
-    allRaces: List<Race>,
+    allRaces: List<UpcomingRace>,
     heroRaceInfo: HeroRaceInfo?,
     onCategorySelect: (String) -> Unit,
     onRaceClick: (String) -> Unit,
@@ -40,7 +45,6 @@ fun AgendaScreen(
     )
     val scope = rememberCoroutineScope()
 
-    // Swipe → notifica o ViewModel apenas quando a animação termina
     LaunchedEffect(pagerState.settledPage) {
         val category = categories.getOrNull(pagerState.settledPage) ?: return@LaunchedEffect
         onCategorySelect(category)
@@ -62,7 +66,7 @@ fun AgendaScreen(
         ) { page ->
             val category = categories.getOrNull(page) ?: return@HorizontalPager
             val races = if (category == "Todos") allRaces
-                        else allRaces.filter { it.category == category }
+                        else allRaces.filter { it.categoryDescription == category }
             AgendaPageContent(
                 selectedCategory = category,
                 races = races,
@@ -76,7 +80,7 @@ fun AgendaScreen(
 @Composable
 private fun AgendaPageContent(
     selectedCategory: String,
-    races: List<Race>,
+    races: List<UpcomingRace>,
     heroRaceInfo: HeroRaceInfo?,
     onRaceClick: (String) -> Unit
 ) {
@@ -120,12 +124,19 @@ private fun AgendaPageContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "🏁", fontSize = 32.sp)
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_finish),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(CircleShape)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "Nenhuma corrida agendada\npara esta categoria.",
                             fontSize = 13.sp,
-                            color = TextMuted
+                            color = TextMuted,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
@@ -158,22 +169,19 @@ private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 @Composable
 private fun AgendaScreenPreview() {
     val races = listOf(
-        Race(
-            id = "monaco",
-            category = "Formula 1",
-            flag = "🇲🇨",
+        UpcomingRace(
+            id = "f1_monaco_gp",
+            flagResName = "ic_monaco",
+            categoryDescription = "Formula 1",
             name = "GP de Mônaco",
+            country = "Monte Carlo",
             location = "Circuit de Monaco",
-            date = "Dom, 25 Mai",
-            time = "14:00",
-            weatherIcon = "☀️",
-            temperature = "22°C",
-            isHero = true
+            raceTimestamp = System.currentTimeMillis() + 9 * 24 * 60 * 60 * 1000L
         )
     )
     AgendaScreen(
         categories = listOf("Todos", "Formula 1", "MotoGP"),
-        selectedCategory = "Todos",
+        selectedCategory = "MotoGP",
         allRaces = races,
         heroRaceInfo = HeroRaceInfo(
             flagResName = "ic_monaco",

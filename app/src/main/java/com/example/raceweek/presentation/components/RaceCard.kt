@@ -1,28 +1,45 @@
 package com.example.raceweek.presentation.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.raceweek.domain.model.Race
+import com.example.raceweek.domain.model.UpcomingRace
+import com.example.raceweek.presentation.utils.toRaceDateString
+import com.example.raceweek.presentation.utils.toRaceTimeString
 import com.example.raceweek.ui.theme.*
+import com.example.raceweek.R
 
 @Composable
 fun RaceCard(
-    race: Race,
+    race: UpcomingRace,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
+    val flagResId = remember(race.flagResName) {
+        context.resources.getIdentifier(race.flagResName, "mipmap", context.packageName)
+    }
+    val dateStr = remember(race.raceTimestamp) { race.raceTimestamp.toRaceDateString() }
+    val timeStr = remember(race.raceTimestamp) { race.raceTimestamp.toRaceTimeString() }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -46,8 +63,18 @@ fun RaceCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = race.flag, fontSize = 20.sp)
-                SeriesBadge(series = race.category)
+                if (flagResId != 0) {
+                    Image(
+                        painter = painterResource(id = flagResId),
+                        contentDescription = race.name,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.size(22.dp))
+                }
+                SeriesBadge(series = race.categoryDescription)
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(
@@ -57,7 +84,7 @@ fun RaceCard(
                 color = TextPrimary
             )
             Text(
-                text = race.location,
+                text = "${race.country} · ${race.location}",
                 fontSize = 11.sp,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 2.dp)
@@ -76,10 +103,9 @@ fun RaceCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    MetaItem(label = "Data", value = race.date)
-                    MetaItem(label = "Largada", value = race.time)
+                    MetaItem(label = stringResource(R.string.date), value = dateStr)
+                    MetaItem(label = stringResource(R.string.start), value = timeStr)
                 }
-                WeatherBadge(icon = race.weatherIcon, temp = race.temperature)
             }
         }
     }
@@ -122,35 +148,18 @@ fun MetaItem(label: String, value: String) {
     }
 }
 
-@Composable
-fun WeatherBadge(icon: String, temp: String) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0x0AFFFFFF))
-            .padding(horizontal = 9.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(text = icon, fontSize = 13.sp)
-        Text(text = temp, fontSize = 11.sp, color = TextSecondary)
-    }
-}
-
 @Preview(showBackground = true, backgroundColor = 0xFF161616)
 @Composable
 private fun RaceCardPreview() {
     RaceCard(
-        race = Race(
-            id = "monaco",
-            category = "Formula 1",
-            flag = "🇲🇨",
+        race = UpcomingRace(
+            id = "f1_monaco_gp",
+            flagResName = "ic_monaco",
+            categoryDescription = "Formula 1",
             name = "GP de Mônaco",
-            location = "Circuit de Monaco · Monte Carlo",
-            date = "Dom, 25 Mai",
-            time = "14:00",
-            weatherIcon = "☀️",
-            temperature = "22°C"
+            country = "Monte Carlo",
+            location = "Circuit de Monaco",
+            raceTimestamp = System.currentTimeMillis() + 9 * 24 * 60 * 60 * 1000L + 14 * 3600 * 1000L
         ),
         onClick = {}
     )

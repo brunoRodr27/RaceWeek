@@ -1,14 +1,17 @@
 package com.example.raceweek.presentation.detail
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,13 +19,17 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.raceweek.domain.model.Race
+import com.example.raceweek.domain.model.UpcomingRace
 import com.example.raceweek.presentation.agenda.AgendaViewModel
+import com.example.raceweek.presentation.utils.toRaceDateString
+import com.example.raceweek.presentation.utils.toRaceTimeString
 import com.example.raceweek.ui.theme.*
 
 @Composable
@@ -39,10 +46,17 @@ fun DetailRoute(
 
 @Composable
 fun DetailScreen(
-    race: Race,
+    race: UpcomingRace,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val flagResId = remember(race.flagResName) {
+        context.resources.getIdentifier(race.flagResName, "mipmap", context.packageName)
+    }
+    val dateStr = remember(race.raceTimestamp) { race.raceTimestamp.toRaceDateString() }
+    val timeStr = remember(race.raceTimestamp) { race.raceTimestamp.toRaceTimeString() }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -73,15 +87,34 @@ fun DetailScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = race.flag, fontSize = 48.sp, modifier = Modifier.padding(bottom = 8.dp))
+                if (flagResId != 0) {
+                    Image(
+                        painter = painterResource(id = flagResId),
+                        contentDescription = race.name,
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .padding(bottom = 8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(text = race.name, fontFamily = BreeSerif, fontSize = 22.sp, color = TextPrimary)
-                Text(text = race.location, fontSize = 12.sp, color = TextSecondary,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp))
+                Text(
+                    text = "${race.country} · ${race.location}",
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                )
                 Box(
                     modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0x1FD44020))
                         .padding(horizontal = 12.dp, vertical = 4.dp)
                 ) {
-                    Text(text = race.category.uppercase(), fontSize = 9.sp, color = Accent, letterSpacing = 2.sp)
+                    Text(
+                        text = race.categoryDescription.uppercase(),
+                        fontSize = 9.sp,
+                        color = Accent,
+                        letterSpacing = 2.sp
+                    )
                 }
             }
 
@@ -89,18 +122,18 @@ fun DetailScreen(
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatCard(label = "Data", value = race.date, modifier = Modifier.weight(1f))
-                    StatCard(label = "Largada", value = race.time, sub = "BRT", modifier = Modifier.weight(1f))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatCard(label = "Clima", value = "${race.weatherIcon} ${race.temperature}", modifier = Modifier.weight(1f))
-                    StatCard(label = "Voltas", value = "78", sub = "~305 km", modifier = Modifier.weight(1f))
+                    StatCard(label = "Data", value = dateStr, modifier = Modifier.weight(1f))
+                    StatCard(label = "Largada", value = timeStr, sub = "UTC", modifier = Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
-                Text(text = "PROGRAMAÇÃO", fontSize = 10.sp, color = TextMuted, letterSpacing = 1.5.sp,
-                    modifier = Modifier.padding(bottom = 8.dp))
+                Text(
+                    text = "PROGRAMAÇÃO",
+                    fontSize = 10.sp,
+                    color = TextMuted,
+                    letterSpacing = 1.5.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
 
                 SessionItem("Treino Livre 1", "Sex · 10:30")
                 SessionItem("Treino Livre 2", "Sex · 14:00")
@@ -114,7 +147,7 @@ fun DetailScreen(
                 ) {
                     Text(text = "🏁 Corrida", fontSize = 13.sp, color = Accent, fontWeight = FontWeight.SemiBold)
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = race.time, fontSize = 11.sp, color = TextMuted)
+                        Text(text = timeStr, fontSize = 11.sp, color = TextMuted)
                         Box(
                             modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0x1AD44020))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -162,9 +195,15 @@ private fun SessionItem(name: String, time: String) {
 @Composable
 private fun DetailScreenPreview() {
     DetailScreen(
-        race = Race(id = "monaco", category = "Formula 1", flag = "🇲🇨", name = "GP de Mônaco",
-            location = "Circuit de Monaco · Monte Carlo", date = "Dom, 25 Mai", time = "14:00",
-            weatherIcon = "☀️", temperature = "22°C"),
+        race = UpcomingRace(
+            id = "f1_monaco_gp",
+            flagResName = "ic_monaco",
+            categoryDescription = "Formula 1",
+            name = "GP de Mônaco",
+            country = "Monte Carlo",
+            location = "Circuit de Monaco",
+            raceTimestamp = System.currentTimeMillis() + 9 * 24 * 60 * 60 * 1000L + 14 * 3600 * 1000L
+        ),
         onBack = {}
     )
 }
