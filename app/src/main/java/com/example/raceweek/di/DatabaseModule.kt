@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.raceweek.data.local.RaceWeekDatabase
 import com.example.raceweek.data.local.dao.CategoryDao
+import com.example.raceweek.data.local.dao.SettingsDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,9 +24,15 @@ object DatabaseModule {
             RaceWeekDatabase::class.java,
             "raceweek.db"
         )
-            .addMigrations(RaceWeekDatabase.MIGRATION_1_2)
+            .addMigrations(
+                RaceWeekDatabase.MIGRATION_1_2,
+                RaceWeekDatabase.MIGRATION_2_3
+            )
             .build()
 
     @Provides
     fun provideCategoryDao(db: RaceWeekDatabase): CategoryDao = db.categoryDao()
+
+    @Provides
+    fun provideSettingsDao(db: RaceWeekDatabase): SettingsDao = db.settingsDao()
 }
