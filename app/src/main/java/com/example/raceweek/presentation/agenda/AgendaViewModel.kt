@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.raceweek.domain.model.CalendarEvent
 import com.example.raceweek.domain.model.HeroRaceInfo
 import com.example.raceweek.domain.model.UpcomingRace
+import com.example.raceweek.domain.usecase.GetAllRacesUseCase
 import com.example.raceweek.domain.usecase.GetCategoriesUseCase
 import com.example.raceweek.domain.usecase.GetNextRaceUseCase
 import com.example.raceweek.domain.usecase.GetUpcomingRacesUseCase
@@ -29,7 +30,8 @@ class AgendaViewModel @Inject constructor(
     getCategoriesUseCase: GetCategoriesUseCase,
     private val syncCategoriesUseCase: SyncCategoriesUseCase,
     private val getNextRaceUseCase: GetNextRaceUseCase,
-    private val getUpcomingRacesUseCase: GetUpcomingRacesUseCase
+    private val getUpcomingRacesUseCase: GetUpcomingRacesUseCase,
+    private val getAllRacesUseCase: GetAllRacesUseCase
 ) : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow("Todos")
@@ -49,9 +51,10 @@ class AgendaViewModel @Inject constructor(
     private val _upcomingRaces = MutableStateFlow<List<UpcomingRace>>(emptyList())
     val upcomingRaces: StateFlow<List<UpcomingRace>> = _upcomingRaces.asStateFlow()
 
-    // Cada sessão (treino, qualifying, corrida) de cada UpcomingRace vira um
-    // CalendarEvent no seu próprio dia UTC. A chave LocalDate suporta qualquer mês/ano.
-    val calendarRaces: StateFlow<Map<LocalDate, List<CalendarEvent>>> = _upcomingRaces
+    // Todas as corridas (passadas + futuras) exclusivamente para o calendário.
+    private val _allRaces = MutableStateFlow<List<UpcomingRace>>(emptyList())
+
+    val calendarRaces: StateFlow<Map<LocalDate, List<CalendarEvent>>> = _allRaces
         .map { races ->
             val byDate = mutableMapOf<LocalDate, MutableList<CalendarEvent>>()
             for (race in races) {
@@ -83,6 +86,7 @@ class AgendaViewModel @Inject constructor(
         viewModelScope.launch { runCatching { syncCategoriesUseCase() } }
         viewModelScope.launch { _heroRaceInfo.value = getNextRaceUseCase() }
         viewModelScope.launch { _upcomingRaces.value = getUpcomingRacesUseCase() }
+        viewModelScope.launch { _allRaces.value = getAllRacesUseCase() }
     }
 
     fun selectCategory(cat: String) {

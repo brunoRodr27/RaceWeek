@@ -3,6 +3,7 @@ package com.example.raceweek.data.remote
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -120,19 +121,23 @@ class FirestoreRemoteDataSource @Inject constructor() {
         }
     }
 
-    // Busca todas as corridas futuras ordenadas por data crescente, incluindo todas
-    // as sessões do documento schedule (practiceone, qualifying, race, etc.).
-    // Usa cache de categorias para evitar leituras repetidas do mesmo campeonato.
-    suspend fun fetchUpcomingRaces(): Result<List<RemoteUpcomingRace>> {
-        return try {
-            val now = Timestamp.now()
-
-            val scheduleSnapshot = db.collectionGroup("extra")
-                .whereGreaterThanOrEqualTo("race", now)
+    // Apenas corridas cuja corrida principal ainda não aconteceu (Agenda).
+    suspend fun fetchUpcomingRaces(): Result<List<RemoteUpcomingRace>> =
+        buildRaceList(
+            db.collectionGroup("extra")
+                .whereGreaterThanOrEqualTo("race", Timestamp.now())
                 .orderBy("race")
-                .get()
-                .await()
+        )
 
+    // Todas as corridas — passadas e futuras — ordenadas por data (Calendário).
+    suspend fun fetchAllRaces(): Result<List<RemoteUpcomingRace>> =
+        buildRaceList(
+            db.collectionGroup("extra").orderBy("race")
+        )
+
+    private suspend fun buildRaceList(query: Query): Result<List<RemoteUpcomingRace>> {
+        return try {
+            val scheduleSnapshot = query.get().await()
             val categoryCache = mutableMapOf<String, DocumentSnapshot>()
             val races = mutableListOf<RemoteUpcomingRace>()
 
@@ -151,7 +156,6 @@ class FirestoreRemoteDataSource @Inject constructor() {
                     ?: categoryDocRef.get().await().also { categoryCache[categoryDocRef.path] = it }
                 if (!categoryDoc.exists()) continue
 
-                // Parseia todos os campos do schedule como sessões (todos são Timestamps)
                 val sessions = scheduleDoc.data?.entries?.mapNotNull { (key, value) ->
                     val ts = (value as? Timestamp)?.toDate()?.time ?: return@mapNotNull null
                     RemoteRaceSession(key = key, timestampMillis = ts)
