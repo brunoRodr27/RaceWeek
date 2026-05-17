@@ -3,6 +3,7 @@ package com.example.raceweek.presentation.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -15,8 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,9 +30,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.raceweek.R
 import com.example.raceweek.domain.model.AppSettings
+import com.example.raceweek.domain.model.Category
 import com.example.raceweek.domain.model.NotificationTime
 import com.example.raceweek.presentation.main.IconCircle
 import com.example.raceweek.ui.theme.*
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsRoute(
@@ -35,13 +42,17 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsState()
+    val categories by viewModel.categories.collectAsState()
     SettingsScreen(
         settings = settings,
+        categories = categories,
         onNotificationsChange = viewModel::setNotifications,
         onTimeChange = viewModel::setTime,
         onPracticesChange = viewModel::setPractices,
         onQualifyingsChange = viewModel::setQualifyings,
         onRacesChange = viewModel::setRaces,
+        onCategoryToggle = viewModel::toggleCategory,
+        onCategoryReorder = viewModel::reorderCategories,
         onBack = onBack
     )
 }
@@ -49,11 +60,14 @@ fun SettingsRoute(
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
+    categories: List<Category>,
     onNotificationsChange: (Boolean) -> Unit,
     onTimeChange: (NotificationTime) -> Unit,
     onPracticesChange: (Boolean) -> Unit,
     onQualifyingsChange: (Boolean) -> Unit,
     onRacesChange: (Boolean) -> Unit,
+    onCategoryToggle: (id: Int, active: Boolean) -> Unit,
+    onCategoryReorder: (orderedIds: List<Int>) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -94,14 +108,12 @@ fun SettingsScreen(
 
             SettingsSection(title = stringResource(R.string.notifications)) {
 
-                // Notificações (toggle principal)
                 ToggleItem(
                     label = "Notificações",
                     checked = notificationsEnabled,
                     onToggle = onNotificationsChange
                 )
 
-                // Tempo de antecedência (segmented control)
                 DependentItem(enabled = notificationsEnabled) {
                     Column(
                         modifier = Modifier
@@ -129,14 +141,8 @@ fun SettingsScreen(
                                         .weight(1f)
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(if (selected) Accent else BgCircle)
-                                        .border(
-                                            1.dp,
-                                            if (selected) Accent else Border,
-                                            RoundedCornerShape(8.dp)
-                                        )
-                                        .clickable(enabled = notificationsEnabled) {
-                                            onTimeChange(option)
-                                        }
+                                        .border(1.dp, if (selected) Accent else Border, RoundedCornerShape(8.dp))
+                                        .clickable(enabled = notificationsEnabled) { onTimeChange(option) }
                                         .padding(vertical = 8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -151,7 +157,6 @@ fun SettingsScreen(
                     }
                 }
 
-                // Treinos Livres
                 DependentItem(enabled = notificationsEnabled) {
                     ToggleItem(
                         label = "Treinos Livres",
@@ -161,7 +166,6 @@ fun SettingsScreen(
                     )
                 }
 
-                // Classificações
                 DependentItem(enabled = notificationsEnabled) {
                     ToggleItem(
                         label = "Classificações",
@@ -171,7 +175,6 @@ fun SettingsScreen(
                     )
                 }
 
-                // Corridas
                 DependentItem(enabled = notificationsEnabled) {
                     ToggleItem(
                         label = "Corridas",
@@ -183,12 +186,13 @@ fun SettingsScreen(
             }
 
             SettingsSection(title = stringResource(R.string.categories)) {
-                ValueItem("Formula 1", "✓ Ativo")
-                ValueItem("MotoGP", "✓ Ativo")
-                ValueItem("IndyCar", "✓ Ativo")
-                ValueItem("WEC / Le Mans", "✓ Ativo")
-                ValueItem("Formula E", "✓ Ativo")
-                ValueItem("NASCAR", "Desativado", valueColor = TextMuted)
+                if (categories.isNotEmpty()) {
+                    ReorderableCategoryList(
+                        categories = categories,
+                        onToggle = onCategoryToggle,
+                        onReorder = onCategoryReorder
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -196,12 +200,150 @@ fun SettingsScreen(
     }
 }
 
-// Wrapper que aplica alpha e bloqueia interação quando desabilitado
+// ── Drag-to-reorder ──────────────────────────────────────────────────────────
+
+private val ITEM_HEIGHT = 56.dp
+private val ITEM_GAP = 6.dp
+
+@Composable
+private fun ReorderableCategoryList(
+    categories: List<Category>,
+    onToggle: (id: Int, active: Boolean) -> Unit,
+    onReorder: (orderedIds: List<Int>) -> Unit
+) {
+    val density = LocalDensity.current
+    val itemTotalPx = with(density) { (ITEM_HEIGHT + ITEM_GAP).toPx() }
+
+    // Lista de trabalho local para feedback visual imediato
+    var workingList by remember(categories) { mutableStateOf(categories) }
+    var draggingId by remember { mutableIntStateOf(-1) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+
+    // Sincroniza com DB somente quando não estiver arrastando
+    LaunchedEffect(categories) {
+        if (draggingId == -1) workingList = categories
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(ITEM_GAP)) {
+        val draggingIdx = workingList.indexOfFirst { it.id == draggingId }
+        val targetIdx = if (draggingIdx >= 0) {
+            (draggingIdx + (dragOffset / itemTotalPx).roundToInt())
+                .coerceIn(0, workingList.size - 1)
+        } else -1
+
+        workingList.forEachIndexed { index, category ->
+            val isDragging = category.id == draggingId
+
+            val offsetY = when {
+                isDragging -> dragOffset
+                draggingIdx >= 0 && targetIdx >= 0 -> when {
+                    index > draggingIdx && index <= targetIdx -> -itemTotalPx
+                    index < draggingIdx && index >= targetIdx -> +itemTotalPx
+                    else -> 0f
+                }
+                else -> 0f
+            }
+
+            Box(
+                modifier = Modifier
+                    .zIndex(if (isDragging) 1f else 0f)
+                    .graphicsLayer { translationY = offsetY }
+            ) {
+                CategoryRow(
+                    category = category,
+                    onToggle = { active -> onToggle(category.id, active) },
+                    dragModifier = Modifier.pointerInput(category.id) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                draggingId = category.id
+                                dragOffset = 0f
+                            },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                dragOffset += amount.y
+                            },
+                            onDragEnd = {
+                                val idx = workingList.indexOfFirst { it.id == draggingId }
+                                val tgt = if (idx >= 0) {
+                                    (idx + (dragOffset / itemTotalPx).roundToInt())
+                                        .coerceIn(0, workingList.size - 1)
+                                } else -1
+                                if (idx >= 0 && tgt >= 0 && idx != tgt) {
+                                    val newList = workingList.toMutableList()
+                                    newList.add(tgt, newList.removeAt(idx))
+                                    workingList = newList
+                                    onReorder(newList.map { it.id })
+                                }
+                                draggingId = -1
+                                dragOffset = 0f
+                            },
+                            onDragCancel = {
+                                draggingId = -1
+                                dragOffset = 0f
+                            }
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryRow(
+    category: Category,
+    onToggle: (Boolean) -> Unit,
+    dragModifier: Modifier
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(ITEM_HEIGHT)
+            .clip(RoundedCornerShape(12.dp))
+            .background(BgCard)
+            .border(1.dp, Border, RoundedCornerShape(12.dp))
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Ícone de arrastar (2×3 pontos)
+        Column(
+            modifier = dragModifier.padding(4.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            repeat(3) {
+                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    repeat(2) {
+                        Box(
+                            modifier = Modifier
+                                .size(3.dp)
+                                .clip(CircleShape)
+                                .background(TextMuted)
+                        )
+                    }
+                }
+            }
+        }
+
+        Text(
+            text = category.description.ifBlank { category.name },
+            fontSize = 13.sp,
+            color = TextPrimary,
+            modifier = Modifier.weight(1f)
+        )
+
+        Toggle(
+            checked = category.active,
+            onToggle = { onToggle(!category.active) }
+        )
+    }
+}
+
+// ── Componentes compartilhados ────────────────────────────────────────────────
+
 @Composable
 private fun DependentItem(enabled: Boolean, content: @Composable () -> Unit) {
-    Box(modifier = Modifier.alpha(if (enabled) 1f else 0.38f)) {
-        content()
-    }
+    Box(modifier = Modifier.alpha(if (enabled) 1f else 0.38f)) { content() }
 }
 
 @Composable
@@ -263,34 +405,23 @@ private fun Toggle(checked: Boolean, enabled: Boolean = true, onToggle: () -> Un
     }
 }
 
-@Composable
-private fun ValueItem(label: String, value: String, valueColor: Color = TextSecondary) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 6.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(BgCard)
-            .border(1.dp, Border, RoundedCornerShape(12.dp))
-            .padding(horizontal = 14.dp, vertical = 13.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(text = label, fontSize = 13.sp, color = TextPrimary)
-        Text(text = value, fontSize = 12.sp, color = valueColor)
-    }
-}
-
 @Preview(showBackground = true, backgroundColor = 0xFF0A0A0A)
 @Composable
 private fun SettingsScreenPreview() {
     SettingsScreen(
         settings = AppSettings(),
+        categories = listOf(
+            Category(1, "f1", true, "Formula 1", 0),
+            Category(2, "motogp", true, "MotoGP", 1),
+            Category(3, "indycar", false, "IndyCar", 2)
+        ),
         onNotificationsChange = {},
         onTimeChange = {},
         onPracticesChange = {},
         onQualifyingsChange = {},
         onRacesChange = {},
+        onCategoryToggle = { _, _ -> },
+        onCategoryReorder = {},
         onBack = {}
     )
 }

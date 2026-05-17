@@ -14,22 +14,26 @@ class CategoryRepositoryImpl @Inject constructor(
     private val remoteDataSource: FirestoreRemoteDataSource
 ) : CategoryRepository {
 
-    override fun getCategories(): Flow<List<Category>> =
-        dao.getAll().map { list -> list.map { it.toDomain() } }
-
     override fun getActiveCategories(): Flow<List<Category>> =
         dao.getActive().map { list -> list.map { it.toDomain() } }
 
+    override fun getAllCategories(): Flow<List<Category>> =
+        dao.getAll().map { list -> list.map { it.toDomain() } }
+
+    // Só insere categorias genuinamente novas; preserva status e order das existentes.
+    // Novas categorias recebem order = MAX(order) + 1, garantindo unicidade.
     override suspend fun syncCategories() {
         remoteDataSource.fetchCategories().onSuccess { remoteList ->
             remoteList.forEach { remote ->
                 if (dao.getByName(remote.name) == null) {
+                    val nextOrder = dao.getMaxOrder() + 1
                     dao.insertAll(
                         listOf(
                             CategoryEntity(
                                 name = remote.name,
                                 status = "T",
-                                description = remote.description
+                                description = remote.description,
+                                order = nextOrder
                             )
                         )
                     )
@@ -38,10 +42,22 @@ class CategoryRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateCategoryStatus(id: Int, active: Boolean) {
+        dao.updateStatus(id, if (active) "T" else "F")
+    }
+
+    // Recebe os IDs na nova sequência desejada e atribui order 0, 1, 2...
+    override suspend fun reorderCategories(orderedIds: List<Int>) {
+        orderedIds.forEachIndexed { index, id ->
+            dao.updateOrder(id, index)
+        }
+    }
+
     private fun CategoryEntity.toDomain() = Category(
         id = id,
         name = name,
         active = status == "T",
-        description = description
+        description = description,
+        order = order
     )
 }

@@ -17,7 +17,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -37,7 +40,12 @@ class AgendaViewModel @Inject constructor(
     private val _selectedCategory = MutableStateFlow("Todos")
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
-    val categories: StateFlow<List<String>> = getCategoriesUseCase()
+    // Fonte compartilhada: categorias ativas do banco, reativa a mudanças nas configurações.
+    // shareIn garante uma única subscription ao DAO, compartilhada por todos os flows abaixo.
+    private val activeCategoriesFlow = getCategoriesUseCase()
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+
+    val categories: StateFlow<List<String>> = activeCategoriesFlow
         .map { list -> listOf("Todos") + list.map { it.description } }
         .stateIn(
             scope = viewModelScope,
@@ -45,48 +53,50 @@ class AgendaViewModel @Inject constructor(
             initialValue = listOf("Todos")
         )
 
+    // Conjunto de descriptions ativas, usado para filtrar corridas reativamente.
+    private val activeDescriptions = activeCategoriesFlow
+        .map { list -> list.map { it.description }.toSet() }
+
     private val _heroRaceInfo = MutableStateFlow<HeroRaceInfo?>(null)
     val heroRaceInfo: StateFlow<HeroRaceInfo?> = _heroRaceInfo.asStateFlow()
 
     private val _upcomingRaces = MutableStateFlow<List<UpcomingRace>>(emptyList())
-    val upcomingRaces: StateFlow<List<UpcomingRace>> = _upcomingRaces.asStateFlow()
-
-    // Todas as corridas (passadas + futuras) exclusivamente para o calendário.
     private val _allRaces = MutableStateFlow<List<UpcomingRace>>(emptyList())
 
-    val calendarRaces: StateFlow<Map<LocalDate, List<CalendarEvent>>> = _allRaces
-        .map { races ->
-            val byDate = mutableMapOf<LocalDate, MutableList<CalendarEvent>>()
-            for (race in races) {
-                for (session in race.sessions) {
-                    val date = Instant.ofEpochMilli(session.timestamp)
-                        .atZone(ZoneOffset.UTC)
-                        .toLocalDate()
-                    byDate.getOrPut(date) { mutableListOf() }.add(
-                        CalendarEvent(
-                            flagResName = race.flagResName,
-                            name = race.name,
-                            time = session.timestamp.toDeviceTimeString(race.timezone),
-                            series = race.categoryDescription,
-                            sessionLabel = session.key.toSessionDisplayName(),
-                            timestampMillis = session.timestamp
-                        )
-                    )
-                }
-            }
-            byDate.mapValues { (_, list) -> list.sortedBy { it.timestampMillis } }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyMap()
-        )
+    // Corridas futuras filtradas pelas categorias ativas no momento.
+    val upcomingRaces: StateFlow<List<UpcomingRace>> = combine(
+        activeDescriptions, _upcomingRaces
+    ) { activeCats, races ->
+        races.filter { it.categoryDescription in activeCats }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
+
+    // Calendário completo (passadas + futuras) filtrado pelas categorias ativas.
+    val calendarRaces: StateFlow<Map<LocalDate, List<CalendarEvent>>> = combine(
+        activeDescriptions, _allRaces
+    ) { activeCats, races ->
+        buildCalendarMap(races.filter { it.categoryDescription in activeCats })
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyMap()
+    )
 
     init {
         viewModelScope.launch { runCatching { syncCategoriesUseCase() } }
         viewModelScope.launch { _heroRaceInfo.value = getNextRaceUseCase() }
         viewModelScope.launch { _upcomingRaces.value = getUpcomingRacesUseCase() }
         viewModelScope.launch { _allRaces.value = getAllRacesUseCase() }
+        // Sempre que as categorias ativas mudarem, rebusca o próximo evento do HeroCard.
+        // drop(1) descarta a emissão inicial para não duplicar a busca já feita acima.
+        viewModelScope.launch {
+            activeCategoriesFlow.drop(1).collect {
+                _heroRaceInfo.value = getNextRaceUseCase()
+            }
+        }
     }
 
     fun selectCategory(cat: String) {
@@ -97,5 +107,27 @@ class AgendaViewModel @Inject constructor(
         viewModelScope.launch { _heroRaceInfo.value = getNextRaceUseCase() }
     }
 
-    fun getRaceById(id: String): UpcomingRace? = _upcomingRaces.value.find { it.id == id }
+    fun getRaceById(id: String): UpcomingRace? = upcomingRaces.value.find { it.id == id }
+
+    private fun buildCalendarMap(races: List<UpcomingRace>): Map<LocalDate, List<CalendarEvent>> {
+        val byDate = mutableMapOf<LocalDate, MutableList<CalendarEvent>>()
+        for (race in races) {
+            for (session in race.sessions) {
+                val date = Instant.ofEpochMilli(session.timestamp)
+                    .atZone(ZoneOffset.UTC)
+                    .toLocalDate()
+                byDate.getOrPut(date) { mutableListOf() }.add(
+                    CalendarEvent(
+                        flagResName = race.flagResName,
+                        name = race.name,
+                        time = session.timestamp.toDeviceTimeString(race.timezone),
+                        series = race.categoryDescription,
+                        sessionLabel = session.key.toSessionDisplayName(),
+                        timestampMillis = session.timestamp
+                    )
+                )
+            }
+        }
+        return byDate.mapValues { (_, list) -> list.sortedBy { it.timestampMillis } }
+    }
 }
