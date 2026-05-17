@@ -14,10 +14,18 @@
     <string name="minutes">Minutos</string>
 
     // Race Card
-    <string name="date">Data</string>
-    <string name="start">Largada</string>
 
     // Bottom Nav Bar
     <string name="agenda">Agenda</string>
     <string name="calendar">Calendário</string>
+
+    // Detail Screen
+    <string name="back">Voltar</string>
+    <string name="schedule">Programação</string>
+    <string name="laps">Voltas</string>
+    <string name="weather">Clima</string>
+
+    // Geral
+    <string name="date">Data</string>
+    <string name="start">Largada</string>
 </resources>

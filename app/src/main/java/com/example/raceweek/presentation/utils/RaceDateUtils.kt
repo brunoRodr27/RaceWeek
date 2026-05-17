@@ -23,3 +23,13 @@ fun Long.toRaceTimeString(): String {
     val ldt = LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneOffset.UTC)
     return String.format("%02d:%02d", ldt.hour, ldt.minute)
 }
+
+// Formato usado nas linhas de programação: "Sex · 14:00"
+fun Long.toSessionTimeString(): String {
+    val ldt = LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneOffset.UTC)
+    val day = ldt.dayOfWeek
+        .getDisplayName(TextStyle.SHORT, Locale("pt", "BR"))
+        .trimEnd('.')
+        .replaceFirstChar { it.uppercase() }
+    return "$day · ${String.format("%02d:%02d", ldt.hour, ldt.minute)}"
+}

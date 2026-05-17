@@ -3,6 +3,7 @@ package com.example.raceweek.presentation.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,7 +26,7 @@ import com.example.raceweek.ui.theme.*
 import kotlinx.coroutines.delay
 
 @Composable
-fun HeroCard(heroRace: HeroRaceInfo, modifier: Modifier = Modifier) {
+fun HeroCard(heroRace: HeroRaceInfo, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
 
     // Atualiza a cada minuto para manter o countdown preciso
@@ -52,6 +53,7 @@ fun HeroCard(heroRace: HeroRaceInfo, modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
             .background(BgCard)
             .border(1.dp, BorderLight, RoundedCornerShape(20.dp))
             .padding(18.dp)
@@ -140,11 +142,13 @@ fun CountBox(value: String, unit: String) {
 private fun HeroCardPreview() {
     HeroCard(
         heroRace = HeroRaceInfo(
+            id = "f1_monaco_gp",
             flagResName = "ic_monaco",
             name = "GP de Mônaco",
             country = "Monte Carlo",
             location = "Circuit de Monaco",
             raceTimestamp = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L + 14 * 60 * 60 * 1000L
-        )
+        ),
+        onClick = {}
     )
 }

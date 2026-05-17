@@ -7,5 +7,7 @@ data class UpcomingRace(
     val name: String,
     val country: String,
     val location: String,
-    val raceTimestamp: Long
+    val raceTimestamp: Long,
+    val laps: Int? = null,
+    val sessions: List<RaceSession> = emptyList()
 )

@@ -12,6 +12,7 @@ class GetNextRaceUseCase @Inject constructor(
             .getOrNull()
             ?.let { remote ->
                 HeroRaceInfo(
+                    id = remote.id,
                     flagResName = remote.flagResName,
                     name = remote.name,
                     country = remote.country,

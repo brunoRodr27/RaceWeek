@@ -16,7 +16,13 @@ data class RemoteCategory(
     val description: String
 )
 
+data class RemoteRaceSession(
+    val key: String,
+    val timestampMillis: Long
+)
+
 data class RemoteHeroRace(
+    val id: String,
     val flagResName: String,
     val name: String,
     val country: String,
@@ -31,7 +37,9 @@ data class RemoteUpcomingRace(
     val name: String,
     val country: String,
     val location: String,
-    val raceTimestampMillis: Long
+    val raceTimestampMillis: Long,
+    val laps: Int? = null,
+    val sessions: List<RemoteRaceSession> = emptyList()
 )
 
 class FirestoreRemoteDataSource @Inject constructor() {
@@ -51,14 +59,12 @@ class FirestoreRemoteDataSource @Inject constructor() {
                     }
                     continuation.resume(categories)
                 }
-                .addOnFailureListener { exception ->
-                    continuation.resumeWithException(exception)
-                }
+                .addOnFailureListener { continuation.resumeWithException(it) }
         }
     }
 
     // Navega pelo collectionGroup "extra" para encontrar o documento "schedule" com o
-    // campo "race" (Timestamp) mais próximo da data atual entre todos os campeonatos/corridas.
+    // campo "race" (Timestamp) mais próximo da data atual.
     suspend fun fetchNextRace(): Result<RemoteHeroRace?> = runCatching {
         val now = Timestamp.now()
         suspendCancellableCoroutine { continuation ->
@@ -80,19 +86,23 @@ class FirestoreRemoteDataSource @Inject constructor() {
                         return@addOnSuccessListener
                     }
 
-                    // Caminho: categories/{cat}/{race}/info/extra/schedule
-                    // parent       -> extra (coleção)
-                    // parent.parent -> info (documento)
+                    // Caminho: categories/{cat}/{raceId}/info/extra/schedule
                     val infoDocRef = scheduleDoc.reference.parent.parent
                     if (infoDocRef == null) {
                         continuation.resume(null)
                         return@addOnSuccessListener
                     }
 
+                    // Constrói o id igual ao usado em fetchUpcomingRaces()
+                    val raceCollectionId = infoDocRef.parent.id
+                    val categoryId = infoDocRef.parent.parent?.id ?: ""
+                    val raceId = "${categoryId}_${raceCollectionId}"
+
                     infoDocRef.get()
                         .addOnSuccessListener { infoDoc ->
                             continuation.resume(
                                 RemoteHeroRace(
+                                    id = raceId,
                                     flagResName = infoDoc.getString("flag") ?: "",
                                     name = infoDoc.getString("name") ?: "",
                                     country = infoDoc.getString("country") ?: "",
@@ -107,9 +117,8 @@ class FirestoreRemoteDataSource @Inject constructor() {
         }
     }
 
-    // Busca todas as corridas futuras ordenadas por data crescente.
-    // Para cada corrida: lê o doc "info" (flag, name, country, location)
-    // e o doc da categoria pai (description para o badge).
+    // Busca todas as corridas futuras ordenadas por data crescente, incluindo todas
+    // as sessões do documento schedule (practiceone, qualifying, race, etc.).
     // Usa cache de categorias para evitar leituras repetidas do mesmo campeonato.
     suspend fun fetchUpcomingRaces(): Result<List<RemoteUpcomingRace>> {
         return try {
@@ -129,7 +138,7 @@ class FirestoreRemoteDataSource @Inject constructor() {
 
                 // categories/{cat}/{raceId}/info/extra/schedule
                 val infoDocRef = scheduleDoc.reference.parent.parent ?: continue
-                val raceCollectionRef = infoDocRef.parent ?: continue
+                val raceCollectionRef = infoDocRef.parent
                 val categoryDocRef = raceCollectionRef.parent ?: continue
 
                 val infoDoc = infoDocRef.get().await()
@@ -139,6 +148,12 @@ class FirestoreRemoteDataSource @Inject constructor() {
                     ?: categoryDocRef.get().await().also { categoryCache[categoryDocRef.path] = it }
                 if (!categoryDoc.exists()) continue
 
+                // Parseia todos os campos do schedule como sessões (todos são Timestamps)
+                val sessions = scheduleDoc.data?.entries?.mapNotNull { (key, value) ->
+                    val ts = (value as? Timestamp)?.toDate()?.time ?: return@mapNotNull null
+                    RemoteRaceSession(key = key, timestampMillis = ts)
+                }?.sortedBy { it.timestampMillis } ?: emptyList()
+
                 races.add(
                     RemoteUpcomingRace(
                         id = "${categoryDoc.id}_${raceCollectionRef.id}",
@@ -147,7 +162,9 @@ class FirestoreRemoteDataSource @Inject constructor() {
                         name = infoDoc.getString("name") ?: "",
                         country = infoDoc.getString("country") ?: "",
                         location = infoDoc.getString("location") ?: "",
-                        raceTimestampMillis = raceTimestamp.toDate().time
+                        raceTimestampMillis = raceTimestamp.toDate().time,
+                        laps = infoDoc.getLong("laps")?.toInt(),
+                        sessions = sessions
                     )
                 )
             }

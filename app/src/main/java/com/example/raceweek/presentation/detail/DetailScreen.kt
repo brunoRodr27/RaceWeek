@@ -9,8 +9,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,15 +24,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.raceweek.R
 import com.example.raceweek.domain.model.UpcomingRace
 import com.example.raceweek.presentation.agenda.AgendaViewModel
 import com.example.raceweek.presentation.utils.toRaceDateString
 import com.example.raceweek.presentation.utils.toRaceTimeString
+import com.example.raceweek.presentation.utils.toSessionTimeString
+import com.example.raceweek.presentation.utils.toSessionDisplayName
 import com.example.raceweek.ui.theme.*
 
 @Composable
@@ -77,8 +84,18 @@ fun DetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(text = "‹", fontSize = 20.sp, color = TextSecondary)
-                Text(text = "Voltar", fontSize = 13.sp, color = TextSecondary)
+                CompositionLocalProvider() {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_back),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = Accent)
+                }
+                Text(
+                    text = stringResource(R.string.back),
+                    fontSize = 13.sp,
+                    color = TextSecondary
+                )
             }
         }
 
@@ -98,7 +115,12 @@ fun DetailScreen(
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = race.name, fontFamily = BreeSerif, fontSize = 22.sp, color = TextPrimary)
+                Text(
+                    text = race.name,
+                    fontFamily = BreeSerif,
+                    fontSize = 22.sp,
+                    color = TextPrimary
+                )
                 Text(
                     text = "${race.country} · ${race.location}",
                     fontSize = 12.sp,
@@ -122,37 +144,59 @@ fun DetailScreen(
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatCard(label = "Data", value = dateStr, modifier = Modifier.weight(1f))
-                    StatCard(label = "Largada", value = timeStr, sub = "UTC", modifier = Modifier.weight(1f))
+                    StatCard(
+                        label = stringResource(R.string.date),
+                        value = dateStr,
+                        modifier = Modifier.weight(1f))
+                    StatCard(
+                        label = stringResource(R.string.start),
+                        value = timeStr,
+                        modifier = Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatCard(
+                        label = stringResource(R.string.laps),
+                        value = race.laps?.toString() ?: "–",
+                        modifier = Modifier.weight(1f))
+                    StatCard(
+                        label = stringResource(R.string.weather),
+                        value = "",
+                        modifier = Modifier.weight(1f))
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
                 Text(
-                    text = "PROGRAMAÇÃO",
+                    text = stringResource(R.string.schedule).uppercase(),
                     fontSize = 10.sp,
                     color = TextMuted,
                     letterSpacing = 1.5.sp,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                SessionItem("Treino Livre 1", "Sex · 10:30")
-                SessionItem("Treino Livre 2", "Sex · 14:00")
-                SessionItem("Treino Livre 3", "Sáb · 11:30")
-                SessionItem("Classificação", "Sáb · 15:00")
+                val regularSessions = race.sessions.filter { it.key != "race" }
+                val raceSession = race.sessions.find { it.key == "race" }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "🏁 Corrida", fontSize = 13.sp, color = Accent, fontWeight = FontWeight.SemiBold)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = timeStr, fontSize = 11.sp, color = TextMuted)
-                        Box(
-                            modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0x1AD44020))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(text = "AO VIVO", fontSize = 9.sp, color = Accent)
+                regularSessions.forEach { session ->
+                    SessionItem(
+                        name = session.key.toSessionDisplayName(),
+                        time = session.timestamp.toSessionTimeString()
+                    )
+                }
+
+                if (raceSession != null) {
+                    val raceTimeStr = raceSession.timestamp.toSessionTimeString()
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = raceSession.key.toSessionDisplayName(), fontSize = 13.sp, color = Accent, fontWeight = FontWeight.SemiBold)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(text = raceTimeStr, fontSize = 11.sp, color = TextMuted)
                         }
                     }
                 }
@@ -162,7 +206,7 @@ fun DetailScreen(
 }
 
 @Composable
-private fun StatCard(label: String, value: String, sub: String? = null, modifier: Modifier = Modifier) {
+private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.clip(RoundedCornerShape(12.dp)).background(BgCard)
             .border(1.dp, Border, RoundedCornerShape(12.dp)).padding(12.dp)
@@ -170,9 +214,6 @@ private fun StatCard(label: String, value: String, sub: String? = null, modifier
         Text(text = label.uppercase(), fontSize = 9.sp, color = TextMuted, letterSpacing = 1.sp)
         Spacer(modifier = Modifier.height(5.dp))
         Text(text = value, fontFamily = BreeSerif, fontSize = 17.sp, color = TextPrimary)
-        if (sub != null) {
-            Text(text = sub, fontSize = 10.sp, color = TextSecondary, modifier = Modifier.padding(top = 2.dp))
-        }
     }
 }
 

@@ -1,6 +1,7 @@
 package com.example.raceweek.domain.model
 
 data class HeroRaceInfo(
+    val id: String,
     val flagResName: String,
     val name: String,
     val country: String,

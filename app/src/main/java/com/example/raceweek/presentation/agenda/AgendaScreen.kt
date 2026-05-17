@@ -89,13 +89,19 @@ private fun AgendaPageContent(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         if (selectedCategory == "Todos" && heroRaceInfo != null) {
+            val hero = heroRaceInfo
             item {
                 SectionLabel(
                     text = stringResource(R.string.next_races),
                     modifier = Modifier.padding(top = 12.dp)
                 )
             }
-            item { HeroCard(heroRace = heroRaceInfo) }
+            item {
+                HeroCard(
+                    heroRace = hero,
+                    onClick = { onRaceClick(hero.id) }
+                )
+            }
         }
 
         item {
@@ -184,6 +190,7 @@ private fun AgendaScreenPreview() {
         selectedCategory = "MotoGP",
         allRaces = races,
         heroRaceInfo = HeroRaceInfo(
+            id = "f1_monaco_gp",
             flagResName = "ic_monaco",
             name = "GP de Mônaco",
             country = "Monte Carlo",
