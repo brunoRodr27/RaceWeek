@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.raceweek.domain.model.CalendarEvent
 import com.example.raceweek.domain.model.HeroRaceInfo
 import com.example.raceweek.domain.model.UpcomingRace
 import com.example.raceweek.presentation.agenda.AgendaScreen
@@ -25,6 +26,7 @@ import com.example.raceweek.presentation.components.AppSidebar
 import com.example.raceweek.presentation.components.BottomNavBar
 import com.example.raceweek.presentation.components.BottomTab
 import com.example.raceweek.ui.theme.*
+import java.time.LocalDate
 
 @Composable
 fun MainRoute(
@@ -36,14 +38,16 @@ fun MainRoute(
     val categories by viewModel.categories.collectAsState()
     val heroRaceInfo by viewModel.heroRaceInfo.collectAsState()
     val upcomingRaces by viewModel.upcomingRaces.collectAsState()
+    val calendarRaces by viewModel.calendarRaces.collectAsState()
     MainScreen(
         selectedCategory = selectedCategory,
         categories = categories,
         upcomingRaces = upcomingRaces,
         heroRaceInfo = heroRaceInfo,
-        calendarRaces = viewModel.calendarRaces,
+        calendarRaces = calendarRaces,
         onCategorySelect = viewModel::selectCategory,
         onRaceClick = onNavigateToDetail,
+        onHeroExpired = viewModel::refreshNextRace,
         onNavigateToSettings = onNavigateToSettings
     )
 }
@@ -54,9 +58,10 @@ fun MainScreen(
     categories: List<String>,
     upcomingRaces: List<UpcomingRace>,
     heroRaceInfo: HeroRaceInfo?,
-    calendarRaces: Map<Int, List<com.example.raceweek.domain.model.CalendarEvent>>,
+    calendarRaces: Map<LocalDate, List<CalendarEvent>>,
     onCategorySelect: (String) -> Unit,
     onRaceClick: (String) -> Unit,
+    onHeroExpired: () -> Unit = {},
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -87,7 +92,8 @@ fun MainScreen(
                         allRaces = upcomingRaces,
                         heroRaceInfo = heroRaceInfo,
                         onCategorySelect = onCategorySelect,
-                        onRaceClick = onRaceClick
+                        onRaceClick = onRaceClick,
+                        onHeroExpired = onHeroExpired
                     )
                     BottomTab.CALENDAR -> CalendarRoute(calendarRaces = calendarRaces)
                 }

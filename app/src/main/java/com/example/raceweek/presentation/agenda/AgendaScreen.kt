@@ -37,6 +37,7 @@ fun AgendaScreen(
     heroRaceInfo: HeroRaceInfo?,
     onCategorySelect: (String) -> Unit,
     onRaceClick: (String) -> Unit,
+    onHeroExpired: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(
@@ -71,7 +72,8 @@ fun AgendaScreen(
                 selectedCategory = category,
                 races = races,
                 heroRaceInfo = if (category == "Todos") heroRaceInfo else null,
-                onRaceClick = onRaceClick
+                onRaceClick = onRaceClick,
+                onHeroExpired = onHeroExpired
             )
         }
     }
@@ -82,7 +84,8 @@ private fun AgendaPageContent(
     selectedCategory: String,
     races: List<UpcomingRace>,
     heroRaceInfo: HeroRaceInfo?,
-    onRaceClick: (String) -> Unit
+    onRaceClick: (String) -> Unit,
+    onHeroExpired: () -> Unit = {}
 ) {
     LazyColumn(
         contentPadding = PaddingValues(bottom = 8.dp),
@@ -99,7 +102,8 @@ private fun AgendaPageContent(
             item {
                 HeroCard(
                     heroRace = hero,
-                    onClick = { onRaceClick(hero.id) }
+                    onClick = { onRaceClick(hero.id) },
+                    onExpired = onHeroExpired
                 )
             }
         }

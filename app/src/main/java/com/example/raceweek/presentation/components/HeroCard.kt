@@ -22,23 +22,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.raceweek.R
 import com.example.raceweek.domain.model.HeroRaceInfo
+import com.example.raceweek.presentation.utils.toCorrectEpochMillis
 import com.example.raceweek.ui.theme.*
 import kotlinx.coroutines.delay
 
 @Composable
-fun HeroCard(heroRace: HeroRaceInfo, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun HeroCard(
+    heroRace: HeroRaceInfo,
+    onClick: () -> Unit,
+    onExpired: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
 
-    // Atualiza a cada minuto para manter o countdown preciso
+    val correctRaceEpoch = remember(heroRace.raceTimestamp, heroRace.timezone) {
+        heroRace.raceTimestamp.toCorrectEpochMillis(heroRace.timezone)
+    }
+
+    // Dispara onExpired ao zerar o countdown, ou imediatamente se o evento já passou
+    LaunchedEffect(correctRaceEpoch) {
+        val remaining = correctRaceEpoch - System.currentTimeMillis()
+        if (remaining > 0) delay(remaining)
+        onExpired()
+    }
+
     var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
+        // Sincroniza com a virada de minuto do relógio do dispositivo
+        delay(60_000L - System.currentTimeMillis() % 60_000L)
+        currentTime = System.currentTimeMillis()
         while (true) {
             delay(60_000L)
             currentTime = System.currentTimeMillis()
         }
     }
 
-    val diff = (heroRace.raceTimestamp - currentTime).coerceAtLeast(0L)
+    val diff = (correctRaceEpoch - currentTime).coerceAtLeast(0L)
     val totalMinutes = diff / 60_000L
     val days = totalMinutes / (60 * 24)
     val hours = (totalMinutes % (60 * 24)) / 60

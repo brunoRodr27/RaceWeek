@@ -14,8 +14,10 @@ data class Race(
 )
 
 data class CalendarEvent(
-    val flag: String,
+    val flagResName: String,
     val name: String,
     val time: String,
-    val series: String
+    val series: String,
+    val sessionLabel: String,
+    val timestampMillis: Long
 )

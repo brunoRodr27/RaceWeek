@@ -21,8 +21,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.raceweek.domain.model.UpcomingRace
+import com.example.raceweek.presentation.utils.toDeviceTimeString
 import com.example.raceweek.presentation.utils.toRaceDateString
-import com.example.raceweek.presentation.utils.toRaceTimeString
 import com.example.raceweek.ui.theme.*
 import com.example.raceweek.R
 
@@ -38,7 +38,9 @@ fun RaceCard(
         context.resources.getIdentifier(race.flagResName, "mipmap", context.packageName)
     }
     val dateStr = remember(race.raceTimestamp) { race.raceTimestamp.toRaceDateString() }
-    val timeStr = remember(race.raceTimestamp) { race.raceTimestamp.toRaceTimeString() }
+    val timeStr = remember(race.raceTimestamp, race.timezone) {
+        race.raceTimestamp.toDeviceTimeString(race.timezone)
+    }
 
     Box(
         modifier = modifier

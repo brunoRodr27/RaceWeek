@@ -6,5 +6,6 @@ data class HeroRaceInfo(
     val name: String,
     val country: String,
     val location: String,
-    val raceTimestamp: Long
+    val raceTimestamp: Long,
+    val timezone: String = "UTC"
 )

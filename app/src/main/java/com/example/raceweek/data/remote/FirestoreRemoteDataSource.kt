@@ -27,7 +27,8 @@ data class RemoteHeroRace(
     val name: String,
     val country: String,
     val location: String,
-    val raceTimestampMillis: Long
+    val raceTimestampMillis: Long,
+    val timezone: String = "UTC"
 )
 
 data class RemoteUpcomingRace(
@@ -38,6 +39,7 @@ data class RemoteUpcomingRace(
     val country: String,
     val location: String,
     val raceTimestampMillis: Long,
+    val timezone: String = "UTC",
     val laps: Int? = null,
     val sessions: List<RemoteRaceSession> = emptyList()
 )
@@ -107,7 +109,8 @@ class FirestoreRemoteDataSource @Inject constructor() {
                                     name = infoDoc.getString("name") ?: "",
                                     country = infoDoc.getString("country") ?: "",
                                     location = infoDoc.getString("location") ?: "",
-                                    raceTimestampMillis = raceTimestamp.toDate().time
+                                    raceTimestampMillis = raceTimestamp.toDate().time,
+                                    timezone = infoDoc.getString("timezone") ?: "UTC"
                                 )
                             )
                         }
@@ -163,6 +166,7 @@ class FirestoreRemoteDataSource @Inject constructor() {
                         country = infoDoc.getString("country") ?: "",
                         location = infoDoc.getString("location") ?: "",
                         raceTimestampMillis = raceTimestamp.toDate().time,
+                        timezone = infoDoc.getString("timezone") ?: "UTC",
                         laps = infoDoc.getLong("laps")?.toInt(),
                         sessions = sessions
                     )

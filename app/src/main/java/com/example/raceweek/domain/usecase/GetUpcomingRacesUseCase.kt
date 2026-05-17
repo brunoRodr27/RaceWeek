@@ -20,6 +20,7 @@ class GetUpcomingRacesUseCase @Inject constructor(
                     country = remote.country,
                     location = remote.location,
                     raceTimestamp = remote.raceTimestampMillis,
+                    timezone = remote.timezone,
                     laps = remote.laps,
                     sessions = remote.sessions.map { s ->
                         RaceSession(key = s.key, timestamp = s.timestampMillis)

@@ -33,9 +33,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.raceweek.R
 import com.example.raceweek.domain.model.UpcomingRace
 import com.example.raceweek.presentation.agenda.AgendaViewModel
+import com.example.raceweek.presentation.utils.deviceTzAbbr
+import com.example.raceweek.presentation.utils.toDeviceSessionTimeString
+import com.example.raceweek.presentation.utils.toDeviceTimeString
 import com.example.raceweek.presentation.utils.toRaceDateString
-import com.example.raceweek.presentation.utils.toRaceTimeString
-import com.example.raceweek.presentation.utils.toSessionTimeString
 import com.example.raceweek.presentation.utils.toSessionDisplayName
 import com.example.raceweek.ui.theme.*
 
@@ -62,7 +63,10 @@ fun DetailScreen(
         context.resources.getIdentifier(race.flagResName, "mipmap", context.packageName)
     }
     val dateStr = remember(race.raceTimestamp) { race.raceTimestamp.toRaceDateString() }
-    val timeStr = remember(race.raceTimestamp) { race.raceTimestamp.toRaceTimeString() }
+    val timeStr = remember(race.raceTimestamp, race.timezone) {
+        race.raceTimestamp.toDeviceTimeString(race.timezone)
+    }
+    val tzAbbr = remember { deviceTzAbbr() }
 
     Column(
         modifier = modifier
@@ -150,7 +154,7 @@ fun DetailScreen(
                         modifier = Modifier.weight(1f))
                     StatCard(
                         label = stringResource(R.string.start),
-                        value = timeStr,
+                        value = "$timeStr · $tzAbbr",
                         modifier = Modifier.weight(1f))
                 }
 
@@ -183,12 +187,12 @@ fun DetailScreen(
                 regularSessions.forEach { session ->
                     SessionItem(
                         name = session.key.toSessionDisplayName(),
-                        time = session.timestamp.toSessionTimeString()
+                        time = session.timestamp.toDeviceSessionTimeString(race.timezone)
                     )
                 }
 
                 if (raceSession != null) {
-                    val raceTimeStr = raceSession.timestamp.toSessionTimeString()
+                    val raceTimeStr = raceSession.timestamp.toDeviceSessionTimeString(race.timezone)
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
