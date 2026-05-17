@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,17 +13,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.raceweek.R
 import com.example.raceweek.domain.model.CalendarEvent
 import com.example.raceweek.domain.model.HeroRaceInfo
 import com.example.raceweek.domain.model.UpcomingRace
 import com.example.raceweek.presentation.agenda.AgendaScreen
 import com.example.raceweek.presentation.agenda.AgendaViewModel
 import com.example.raceweek.presentation.calendar.CalendarRoute
-import com.example.raceweek.presentation.components.AppSidebar
 import com.example.raceweek.presentation.components.BottomNavBar
 import com.example.raceweek.presentation.components.BottomTab
 import com.example.raceweek.ui.theme.*
@@ -66,7 +68,6 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(BottomTab.AGENDA) }
-    var sidebarOpen by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
@@ -80,7 +81,6 @@ fun MainScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
             TopBar(
-                onMenuClick = { sidebarOpen = true },
                 onSettingsClick = onNavigateToSettings
             )
 
@@ -104,20 +104,11 @@ fun MainScreen(
                 onTabSelected = { selectedTab = it }
             )
         }
-
-        if (sidebarOpen) {
-            AppSidebar(
-                isOpen = sidebarOpen,
-                onClose = { sidebarOpen = false },
-                onNavigateToCalendar = { selectedTab = BottomTab.CALENDAR },
-                onNavigateToSettings = onNavigateToSettings
-            )
-        }
     }
 }
 
 @Composable
-private fun TopBar(onMenuClick: () -> Unit, onSettingsClick: () -> Unit) {
+private fun TopBar(onSettingsClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,8 +117,8 @@ private fun TopBar(onMenuClick: () -> Unit, onSettingsClick: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconCircle(onClick = onMenuClick) {
-            MenuIcon()
+        IconCircle(onClick = {}) {
+            Text(text = "")
         }
         Text(
             text = "RACEWEEK",
@@ -137,7 +128,11 @@ private fun TopBar(onMenuClick: () -> Unit, onSettingsClick: () -> Unit) {
             letterSpacing = 1.sp
         )
         IconCircle(onClick = onSettingsClick) {
-            SettingsIcon()
+            Icon(
+                painter = painterResource(R.drawable.ic_config),
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = Accent)
         }
     }
 }
@@ -147,28 +142,11 @@ fun IconCircle(onClick: () -> Unit, content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
             .size(40.dp)
-            .clip(CircleShape)
-            .background(BgCircle)
-            .border(1.dp, BorderLight, CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         content()
     }
-}
-
-@Composable
-private fun MenuIcon() {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(modifier = Modifier.width(16.dp).height(1.5.dp).background(Accent))
-        Box(modifier = Modifier.width(16.dp).height(1.5.dp).background(TextMuted))
-        Box(modifier = Modifier.width(10.dp).height(1.5.dp).background(Accent))
-    }
-}
-
-@Composable
-private fun SettingsIcon() {
-    Text(text = "⚙", fontSize = 16.sp, color = TextSecondary)
 }
 
 @Preview(showBackground = true)

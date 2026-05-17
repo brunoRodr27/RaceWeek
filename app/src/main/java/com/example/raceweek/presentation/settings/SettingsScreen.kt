@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,9 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.raceweek.R
 import com.example.raceweek.presentation.main.IconCircle
 import com.example.raceweek.ui.theme.*
 
@@ -40,18 +44,30 @@ fun SettingsScreen(
         )
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 54.dp, start = 16.dp, end = 16.dp, bottom = 14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 54.dp, start = 16.dp, end = 16.dp, bottom = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.SpaceBetween,
+            //horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             IconCircle(onClick = onBack) {
-                Text(text = "‹", fontSize = 20.sp, color = TextSecondary)
+                Icon(
+                    painter = painterResource(R.drawable.ic_back),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = Accent)
             }
-            Text(text = "Configurações", fontFamily = BreeSerif, fontSize = 19.sp, color = TextPrimary)
+            Text(
+                text = stringResource(R.string.settings).uppercase(),
+                fontFamily = BreeSerif,
+                fontSize = 19.sp,
+                color = TextPrimary
+            )
         }
 
         Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            SettingsSection(title = "Notificações") {
+            SettingsSection(title = stringResource(R.string.notifications)) {
                 var alertas by remember { mutableStateOf(true) }
                 var aviso by remember { mutableStateOf(true) }
                 var resultados by remember { mutableStateOf(false) }
@@ -61,19 +77,13 @@ fun SettingsScreen(
                 ToggleItem("Resultados ao vivo", resultados) { resultados = it }
             }
 
-            SettingsSection(title = "Campeonatos") {
+            SettingsSection(title = stringResource(R.string.categories)) {
                 ValueItem("Formula 1", "✓ Ativo")
                 ValueItem("MotoGP", "✓ Ativo")
                 ValueItem("IndyCar", "✓ Ativo")
                 ValueItem("WEC / Le Mans", "✓ Ativo")
                 ValueItem("Formula E", "✓ Ativo")
                 ValueItem("NASCAR", "Desativado", valueColor = TextMuted)
-            }
-
-            SettingsSection(title = "Preferências") {
-                ValueItem("Fuso horário", "BRT −3")
-                ValueItem("Idioma", "Português")
-                ValueItem("Versão", "1.0.0", valueColor = TextMuted)
             }
 
             Spacer(modifier = Modifier.height(20.dp))

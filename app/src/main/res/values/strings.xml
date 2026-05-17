@@ -28,4 +28,9 @@
     // Geral
     <string name="date">Data</string>
     <string name="start">Largada</string>
+
+    // Settings Screen
+    <string name="settings">Configurações</string>
+    <string name="notifications">Notificações</string>
+    <string name="categories">Categorias</string>
 </resources>

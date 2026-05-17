@@ -1,6 +1,14 @@
 package com.example.raceweek.presentation.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideOut
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.IntOffset
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -13,18 +21,25 @@ import com.example.raceweek.presentation.main.MainRoute
 import com.example.raceweek.presentation.settings.SettingsRoute
 import com.example.raceweek.presentation.splash.SplashRoute
 
+private const val ANIM_DURATION = 300
+
 @Composable
 fun NavGraph(navController: NavHostController) {
-    // Instanciado aqui, fora de qualquer composable{}, o ViewModel é criado no momento
-    // em que o NavGraph é composto — ainda durante a splash screen. O init block
-    // dispara imediatamente, dando aos carregamentos do Firestore ~1400ms de vantagem.
     val viewModel: AgendaViewModel = hiltViewModel()
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Splash.route
+        startDestination = Screen.Splash.route,
+        enterTransition = { slideIn(tween(ANIM_DURATION)) { IntOffset(it.width, 0) } + fadeIn(tween(ANIM_DURATION)) },
+        exitTransition = { slideOut(tween(ANIM_DURATION)) { IntOffset(-it.width, 0) } + fadeOut(tween(ANIM_DURATION)) },
+        popEnterTransition = { slideIn(tween(ANIM_DURATION)) { IntOffset(-it.width, 0) } + fadeIn(tween(ANIM_DURATION)) },
+        popExitTransition = { slideOut(tween(ANIM_DURATION)) { IntOffset(it.width, 0) } + fadeOut(tween(ANIM_DURATION)) }
     ) {
-        composable(Screen.Splash.route) {
+        composable(
+            route = Screen.Splash.route,
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None }
+        ) {
             SplashRoute(
                 onSplashFinished = {
                     navController.navigate(Screen.Main.route) {
@@ -34,7 +49,13 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.Main.route) {
+        composable(
+            route = Screen.Main.route,
+            enterTransition = { EnterTransition.None },
+            exitTransition = { slideOut(tween(ANIM_DURATION)) { IntOffset(-it.width, 0) } + fadeOut(tween(ANIM_DURATION)) },
+            popEnterTransition = { slideIn(tween(ANIM_DURATION)) { IntOffset(-it.width, 0) } + fadeIn(tween(ANIM_DURATION)) },
+            popExitTransition = { ExitTransition.None }
+        ) {
             MainRoute(
                 viewModel = viewModel,
                 onNavigateToDetail = { raceId ->
@@ -58,7 +79,7 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        composable(Screen.Settings.route) {
+        composable(route = Screen.Settings.route) {
             SettingsRoute(onBack = { navController.popBackStack() })
         }
     }
