@@ -105,7 +105,7 @@ fun HeroCard(
                 )
             }
             Text(
-                text = "${heroRace.country} · ${heroRace.location}",
+                text = stringResource(R.string.location_format, heroRace.country, heroRace.location),
                 fontSize = 12.sp,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)

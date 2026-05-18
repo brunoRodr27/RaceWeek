@@ -29,6 +29,8 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import javax.inject.Inject
 
+const val CATEGORY_ALL = "Todos"
+
 @HiltViewModel
 class AgendaViewModel @Inject constructor(
     getCategoriesUseCase: GetCategoriesUseCase,
@@ -39,7 +41,7 @@ class AgendaViewModel @Inject constructor(
     private val scheduleNotificationsUseCase: ScheduleNotificationsUseCase
 ) : ViewModel() {
 
-    private val _selectedCategory = MutableStateFlow("Todos")
+    private val _selectedCategory = MutableStateFlow(CATEGORY_ALL)
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
     // Fonte compartilhada: categorias ativas do banco, reativa a mudanças nas configurações.
@@ -49,11 +51,11 @@ class AgendaViewModel @Inject constructor(
         .shareIn(viewModelScope, SharingStarted.Eagerly, replay = 1)
 
     val categories: StateFlow<List<String>> = activeCategoriesFlow
-        .map { list -> listOf("Todos") + list.map { it.description } }
+        .map { list -> listOf(CATEGORY_ALL) + list.map { it.description } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = listOf("Todos")
+            initialValue = listOf(CATEGORY_ALL)
         )
 
     // Conjunto de descriptions ativas, usado para filtrar corridas reativamente.

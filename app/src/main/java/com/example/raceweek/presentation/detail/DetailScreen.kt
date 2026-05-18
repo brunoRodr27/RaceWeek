@@ -139,7 +139,7 @@ fun DetailScreen(
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "${race.country} · ${race.location}",
+                    text = stringResource(R.string.location_format, race.country, race.location),
                     fontSize = 12.sp,
                     color = TextSecondary,
                     modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
@@ -167,7 +167,7 @@ fun DetailScreen(
                         modifier = Modifier.weight(1f))
                     StatCard(
                         label = stringResource(R.string.start),
-                        value = "$timeStr · $tzAbbr",
+                        value = stringResource(R.string.time_timezone_format, timeStr, tzAbbr),
                         modifier = Modifier.weight(1f))
                 }
 

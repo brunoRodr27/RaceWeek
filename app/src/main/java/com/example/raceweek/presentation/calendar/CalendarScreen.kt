@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,7 @@ import com.example.raceweek.R
 import com.example.raceweek.domain.model.CalendarEvent
 import com.example.raceweek.presentation.utils.deviceTzAbbr
 import com.example.raceweek.ui.theme.*
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -50,7 +52,12 @@ fun CalendarScreen(
     val today = remember { LocalDate.now() }
     var selectedDay by remember { mutableStateOf<LocalDate?>(null) }
 
-    val daysOfWeek = listOf("D", "S", "T", "Q", "Q", "S", "S")
+    val daysOfWeek = remember {
+        val locale = Locale("pt", "BR")
+        listOf(DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+               DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY)
+            .map { it.getDisplayName(TextStyle.NARROW, locale) }
+    }
 
     // DayOfWeek.value: Mon=1..Sun=7 → % 7 → Sun=0, Mon=1, ..., Sat=6
     val firstDayIndex = currentYearMonth.atDay(1).dayOfWeek.value % 7
@@ -172,9 +179,9 @@ fun CalendarScreen(
         // Seção de eventos
         val eventFormatter = remember { DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("pt", "BR")) }
         val eventLabel = if (selectedDay != null)
-            "EVENTOS · ${selectedDay!!.format(eventFormatter).uppercase()}"
+            stringResource(R.string.events_on_date, selectedDay!!.format(eventFormatter).uppercase())
         else
-            "EVENTOS · SELECIONE UM DIA"
+            stringResource(R.string.events_select_day).uppercase()
 
         Text(
             text = eventLabel,
@@ -191,13 +198,13 @@ fun CalendarScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
             selectedDay != null -> Text(
-                text = "Nenhum evento neste dia.",
+                text = stringResource(R.string.no_events_this_day),
                 fontSize = 12.sp,
                 color = TextMuted,
                 modifier = Modifier.fillMaxWidth().padding(16.dp)
             )
             else -> Text(
-                text = "Toque num dia com ● para ver eventos",
+                text = stringResource(R.string.tap_day_hint),
                 fontSize = 12.sp,
                 color = TextMuted,
                 modifier = Modifier.fillMaxWidth().padding(16.dp)
@@ -253,7 +260,7 @@ private fun CalendarEventCard(event: CalendarEvent) {
                 modifier = Modifier.padding(top = 1.dp)
             )
             Text(
-                text = "${event.time} · $tzAbbr",
+                text = stringResource(R.string.time_timezone_format, event.time, tzAbbr),
                 fontSize = 10.sp,
                 color = TextMuted,
                 modifier = Modifier.padding(top = 1.dp)

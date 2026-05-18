@@ -109,7 +109,7 @@ fun SettingsScreen(
             SettingsSection(title = stringResource(R.string.notifications)) {
 
                 ToggleItem(
-                    label = "Notificações",
+                    label = stringResource(R.string.notifications),
                     checked = notificationsEnabled,
                     onToggle = onNotificationsChange
                 )
@@ -125,7 +125,7 @@ fun SettingsScreen(
                             .padding(horizontal = 14.dp, vertical = 13.dp)
                     ) {
                         Text(
-                            text = "Tempo de notificação",
+                            text = stringResource(R.string.notification_time_label),
                             fontSize = 13.sp,
                             color = TextPrimary,
                             modifier = Modifier.padding(bottom = 10.dp)
@@ -159,7 +159,7 @@ fun SettingsScreen(
 
                 DependentItem(enabled = notificationsEnabled) {
                     ToggleItem(
-                        label = "Treinos Livres",
+                        label = stringResource(R.string.practices),
                         checked = settings.practices,
                         enabled = notificationsEnabled,
                         onToggle = onPracticesChange
@@ -168,7 +168,7 @@ fun SettingsScreen(
 
                 DependentItem(enabled = notificationsEnabled) {
                     ToggleItem(
-                        label = "Classificações",
+                        label = stringResource(R.string.qualifyings),
                         checked = settings.qualifyings,
                         enabled = notificationsEnabled,
                         onToggle = onQualifyingsChange
@@ -177,7 +177,7 @@ fun SettingsScreen(
 
                 DependentItem(enabled = notificationsEnabled) {
                     ToggleItem(
-                        label = "Corridas",
+                        label = stringResource(R.string.races),
                         checked = settings.races,
                         enabled = notificationsEnabled,
                         onToggle = onRacesChange

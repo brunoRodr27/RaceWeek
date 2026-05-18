@@ -66,12 +66,12 @@ fun AgendaScreen(
             verticalAlignment = Alignment.Top
         ) { page ->
             val category = categories.getOrNull(page) ?: return@HorizontalPager
-            val races = if (category == "Todos") allRaces
+            val races = if (category == CATEGORY_ALL) allRaces
                         else allRaces.filter { it.categoryDescription == category }
             AgendaPageContent(
                 selectedCategory = category,
                 races = races,
-                heroRaceInfo = if (category == "Todos") heroRaceInfo else null,
+                heroRaceInfo = if (category == CATEGORY_ALL) heroRaceInfo else null,
                 onRaceClick = onRaceClick,
                 onHeroExpired = onHeroExpired
             )
@@ -91,7 +91,7 @@ private fun AgendaPageContent(
         contentPadding = PaddingValues(bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        if (selectedCategory == "Todos" && heroRaceInfo != null) {
+        if (selectedCategory == CATEGORY_ALL && heroRaceInfo != null) {
             val hero = heroRaceInfo
             item {
                 SectionLabel(
@@ -109,7 +109,7 @@ private fun AgendaPageContent(
         }
 
         item {
-            if (selectedCategory == "Todos") {
+            if (selectedCategory == CATEGORY_ALL) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -143,7 +143,7 @@ private fun AgendaPageContent(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Nenhuma corrida agendada\npara esta categoria.",
+                            text = stringResource(R.string.no_races_scheduled),
                             fontSize = 13.sp,
                             color = TextMuted,
                             textAlign = TextAlign.Center

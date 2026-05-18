@@ -86,7 +86,7 @@ fun RaceCard(
                 color = TextPrimary
             )
             Text(
-                text = "${race.country} · ${race.location}",
+                text = stringResource(R.string.location_format, race.country, race.location),
                 fontSize = 11.sp,
                 color = TextSecondary,
                 modifier = Modifier.padding(top = 2.dp)

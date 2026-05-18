@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -121,7 +122,7 @@ private fun TopBar(onSettingsClick: () -> Unit) {
             Text(text = "")
         }
         Text(
-            text = "RACEWEEK",
+            text = stringResource(R.string.app_name).uppercase(),
             fontFamily = BreeSerif,
             fontSize = 20.sp,
             color = TextPrimary,

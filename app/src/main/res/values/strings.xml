@@ -1,36 +1,48 @@
 <resources>
     <string name="app_name">RaceWeek</string>
 
-    // Splash Screen
+    <!-- Splash Screen -->
     <string name="description_app">Seu calendário de corridas</string>
-    
-    // Agenda Screen
-    <string name="next_races">Próximas corridas</string>
 
-    // Hero Card
+    <!-- Agenda Screen -->
+    <string name="next_races">Próximas corridas</string>
+    <string name="category_all">Todos</string>
+    <string name="no_races_scheduled">Nenhuma corrida agendada\npara esta categoria.</string>
+
+    <!-- Hero Card -->
     <string name="next_event">Próximo evento</string>
     <string name="days">Dias</string>
     <string name="hours">Horas</string>
     <string name="minutes">Minutos</string>
 
-    // Race Card
+    <!-- Calendar Screen -->
+    <string name="events_select_day">Eventos · Selecione um dia</string>
+    <string name="events_on_date">EVENTOS · %s</string>
+    <string name="no_events_this_day">Nenhum evento neste dia.</string>
+    <string name="tap_day_hint">Toque em um dia com ● para ver eventos</string>
 
-    // Bottom Nav Bar
+    <!-- Bottom Nav Bar -->
     <string name="agenda">Agenda</string>
     <string name="calendar">Calendário</string>
 
-    // Detail Screen
+    <!-- Detail Screen -->
     <string name="back">Voltar</string>
     <string name="schedule">Programação</string>
     <string name="laps">Voltas</string>
     <string name="weather">Clima</string>
 
-    // Geral
+    <!-- Geral -->
     <string name="date">Data</string>
     <string name="start">Largada</string>
+    <string name="location_format">%1$s · %2$s</string>
+    <string name="time_timezone_format">%1$s · %2$s</string>
 
-    // Settings Screen
+    <!-- Settings Screen -->
     <string name="settings">Configurações</string>
     <string name="notifications">Notificações</string>
+    <string name="notification_time_label">Tempo de notificação</string>
+    <string name="practices">Treinos Livres</string>
+    <string name="qualifyings">Classificações</string>
+    <string name="races">Corridas</string>
     <string name="categories">Categorias</string>
 </resources>
