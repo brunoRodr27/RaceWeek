@@ -9,6 +9,7 @@ import com.example.raceweek.domain.usecase.GetAllRacesUseCase
 import com.example.raceweek.domain.usecase.GetCategoriesUseCase
 import com.example.raceweek.domain.usecase.GetNextRaceUseCase
 import com.example.raceweek.domain.usecase.GetUpcomingRacesUseCase
+import com.example.raceweek.domain.usecase.ScheduleNotificationsUseCase
 import com.example.raceweek.domain.usecase.SyncCategoriesUseCase
 import com.example.raceweek.presentation.utils.toDeviceTimeString
 import com.example.raceweek.presentation.utils.toSessionDisplayName
@@ -34,7 +35,8 @@ class AgendaViewModel @Inject constructor(
     private val syncCategoriesUseCase: SyncCategoriesUseCase,
     private val getNextRaceUseCase: GetNextRaceUseCase,
     private val getUpcomingRacesUseCase: GetUpcomingRacesUseCase,
-    private val getAllRacesUseCase: GetAllRacesUseCase
+    private val getAllRacesUseCase: GetAllRacesUseCase,
+    private val scheduleNotificationsUseCase: ScheduleNotificationsUseCase
 ) : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow("Todos")
@@ -89,8 +91,14 @@ class AgendaViewModel @Inject constructor(
     init {
         viewModelScope.launch { runCatching { syncCategoriesUseCase() } }
         viewModelScope.launch { _heroRaceInfo.value = getNextRaceUseCase() }
-        viewModelScope.launch { _upcomingRaces.value = getUpcomingRacesUseCase() }
         viewModelScope.launch { _allRaces.value = getAllRacesUseCase() }
+        // Carrega corridas e agenda notificações com os mesmos dados — evita segunda chamada
+        // ao Firestore que poderia retornar vazia por race condition na inicialização.
+        viewModelScope.launch {
+            val races = getUpcomingRacesUseCase()
+            _upcomingRaces.value = races
+            runCatching { scheduleNotificationsUseCase(races) }
+        }
         // Sempre que as categorias ativas mudarem, rebusca o próximo evento do HeroCard.
         // drop(1) descarta a emissão inicial para não duplicar a busca já feita acima.
         viewModelScope.launch {

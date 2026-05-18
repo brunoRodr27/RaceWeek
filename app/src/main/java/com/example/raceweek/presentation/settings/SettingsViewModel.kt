@@ -9,6 +9,7 @@ import com.example.raceweek.domain.usecase.GetAllCategoriesUseCase
 import com.example.raceweek.domain.usecase.GetSettingsUseCase
 import com.example.raceweek.domain.usecase.ReorderCategoriesUseCase
 import com.example.raceweek.domain.usecase.SaveSettingsUseCase
+import com.example.raceweek.domain.usecase.ScheduleNotificationsUseCase
 import com.example.raceweek.domain.usecase.UpdateCategoryStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,7 +24,8 @@ class SettingsViewModel @Inject constructor(
     private val saveSettingsUseCase: SaveSettingsUseCase,
     getAllCategoriesUseCase: GetAllCategoriesUseCase,
     private val updateCategoryStatusUseCase: UpdateCategoryStatusUseCase,
-    private val reorderCategoriesUseCase: ReorderCategoriesUseCase
+    private val reorderCategoriesUseCase: ReorderCategoriesUseCase,
+    private val scheduleNotificationsUseCase: ScheduleNotificationsUseCase
 ) : ViewModel() {
 
     val settings: StateFlow<AppSettings> = getSettingsUseCase()
@@ -47,6 +49,9 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun save(updated: AppSettings) {
-        viewModelScope.launch { saveSettingsUseCase(updated) }
+        viewModelScope.launch {
+            saveSettingsUseCase(updated)
+            runCatching { scheduleNotificationsUseCase() }
+        }
     }
 }

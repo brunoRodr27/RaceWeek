@@ -183,6 +183,7 @@ fun SettingsScreen(
                         onToggle = onRacesChange
                     )
                 }
+
             }
 
             SettingsSection(title = stringResource(R.string.categories)) {
