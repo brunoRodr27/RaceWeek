@@ -10,5 +10,7 @@ data class UpcomingRace(
     val raceTimestamp: Long,
     val timezone: String = "UTC",
     val laps: Int? = null,
+    val lat: Double? = null,
+    val lon: Double? = null,
     val sessions: List<RaceSession> = emptyList()
 )

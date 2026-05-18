@@ -1,5 +1,6 @@
 package com.example.raceweek.data.remote
 
+import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
@@ -11,6 +12,8 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+
+private const val TAG = "FirestoreDS"
 
 data class RemoteCategory(
     val name: String,
@@ -42,6 +45,8 @@ data class RemoteUpcomingRace(
     val raceTimestampMillis: Long,
     val timezone: String = "UTC",
     val laps: Int? = null,
+    val lat: Double? = null,
+    val lon: Double? = null,
     val sessions: List<RemoteRaceSession> = emptyList()
 )
 
@@ -144,7 +149,7 @@ class FirestoreRemoteDataSource @Inject constructor() {
             for (scheduleDoc in scheduleSnapshot.documents) {
                 val raceTimestamp = scheduleDoc.getTimestamp("race") ?: continue
 
-                // categories/{cat}/{raceId}/info/extra/schedule
+                // categories/{cat}/{raceId}/infos/extra/schedule
                 val infoDocRef = scheduleDoc.reference.parent.parent ?: continue
                 val raceCollectionRef = infoDocRef.parent
                 val categoryDocRef = raceCollectionRef.parent ?: continue
@@ -172,6 +177,8 @@ class FirestoreRemoteDataSource @Inject constructor() {
                         raceTimestampMillis = raceTimestamp.toDate().time,
                         timezone = infoDoc.getString("timezone") ?: "UTC",
                         laps = infoDoc.getLong("laps")?.toInt(),
+                        lat = infoDoc.safeDouble("lat"),
+                        lon = infoDoc.safeDouble("lon"),
                         sessions = sessions
                     )
                 )
@@ -181,7 +188,17 @@ class FirestoreRemoteDataSource @Inject constructor() {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            Log.e(TAG, "buildRaceList erro inesperado: ${e.message}", e)
             Result.failure(e)
         }
     }
+
+    // getDouble() do Firestore lança RuntimeException se o campo for String.
+    // Esta extensão trata os dois tipos que podem vir do Firestore (Number ou String).
+    private fun DocumentSnapshot.safeDouble(field: String): Double? =
+        when (val v = get(field)) {
+            is Number -> v.toDouble()
+            is String -> v.toDoubleOrNull()
+            else -> null
+        }
 }

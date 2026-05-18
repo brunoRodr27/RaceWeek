@@ -41,9 +41,10 @@ class AgendaViewModel @Inject constructor(
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
     // Fonte compartilhada: categorias ativas do banco, reativa a mudanças nas configurações.
-    // shareIn garante uma única subscription ao DAO, compartilhada por todos os flows abaixo.
+    // Eagerly: a query à Room começa junto com o ViewModel, garantindo que o buffer replay=1
+    // já esteja populado antes de qualquer combine se inscrever — evita race condition.
     private val activeCategoriesFlow = getCategoriesUseCase()
-        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+        .shareIn(viewModelScope, SharingStarted.Eagerly, replay = 1)
 
     val categories: StateFlow<List<String>> = activeCategoriesFlow
         .map { list -> listOf("Todos") + list.map { it.description } }

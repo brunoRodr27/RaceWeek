@@ -1,5 +1,11 @@
 package com.example.raceweek.presentation.detail
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,13 +16,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -44,17 +48,25 @@ import com.example.raceweek.ui.theme.*
 fun DetailRoute(
     raceId: String,
     onBack: () -> Unit,
-    viewModel: AgendaViewModel = hiltViewModel()
+    agendaViewModel: AgendaViewModel = hiltViewModel(),
+    detailViewModel: DetailViewModel = hiltViewModel()
 ) {
-    val race = viewModel.getRaceById(raceId)
+    val race = remember(raceId) { agendaViewModel.getRaceById(raceId) }
+    val weather by detailViewModel.weather.collectAsState()
+
+    LaunchedEffect(race) {
+        race?.let { detailViewModel.loadWeather(it) }
+    }
+
     if (race != null) {
-        DetailScreen(race = race, onBack = onBack)
+        DetailScreen(race = race, weather = weather, onBack = onBack)
     }
 }
 
 @Composable
 fun DetailScreen(
     race: UpcomingRace,
+    weather: String?,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -88,13 +100,12 @@ fun DetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                CompositionLocalProvider() {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_back),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = Accent)
-                }
+                Icon(
+                    painter = painterResource(R.drawable.ic_back),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = Accent
+                )
                 Text(
                     text = stringResource(R.string.back),
                     fontSize = 13.sp,
@@ -164,11 +175,21 @@ fun DetailScreen(
                     StatCard(
                         label = stringResource(R.string.laps),
                         value = race.laps?.toString() ?: "–",
-                        modifier = Modifier.weight(1f))
+                        modifier = Modifier.weight(1f)
+                    )
+                    // alpha=0 (invisível, mantém espaço) quando API não retornou clima
                     StatCard(
                         label = stringResource(R.string.weather),
-                        value = "",
-                        modifier = Modifier.weight(1f))
+                        modifier = Modifier
+                            .weight(1f)
+                            .alpha(if (weather == "–") 0f else 1f)
+                    ) {
+                        if (weather == null) {
+                            AnimatedLoadingDots()
+                        } else {
+                            Text(text = weather, fontFamily = BreeSerif, fontSize = 17.sp, color = TextPrimary)
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -211,13 +232,55 @@ fun DetailScreen(
 
 @Composable
 private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
+    StatCard(label = label, modifier = modifier) {
+        Text(text = value, fontFamily = BreeSerif, fontSize = 17.sp, color = TextPrimary)
+    }
+}
+
+@Composable
+private fun StatCard(label: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(
         modifier = modifier.clip(RoundedCornerShape(12.dp)).background(BgCard)
             .border(1.dp, Border, RoundedCornerShape(12.dp)).padding(12.dp)
     ) {
         Text(text = label.uppercase(), fontSize = 9.sp, color = TextMuted, letterSpacing = 1.sp)
         Spacer(modifier = Modifier.height(5.dp))
-        Text(text = value, fontFamily = BreeSerif, fontSize = 17.sp, color = TextPrimary)
+        content()
+    }
+}
+
+@Composable
+private fun AnimatedLoadingDots() {
+    val transition = rememberInfiniteTransition(label = "loading")
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.height(24.dp)
+    ) {
+        listOf(0, 280, 560).forEach { delayMs ->
+            val alpha by transition.animateFloat(
+                initialValue = 0.2f,
+                targetValue = 0.2f,
+                animationSpec = infiniteRepeatable(
+                    animation = keyframes {
+                        durationMillis = 1200
+                        0.2f at 0 using LinearEasing
+                        if (delayMs > 0) 0.2f at delayMs using LinearEasing
+                        1.0f at delayMs + 140 using LinearEasing
+                        0.2f at delayMs + 280 using LinearEasing
+                        0.2f at 1200 using LinearEasing
+                    },
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "dot_$delayMs"
+            )
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(Accent.copy(alpha = alpha))
+            )
+        }
     }
 }
 
@@ -249,6 +312,7 @@ private fun DetailScreenPreview() {
             location = "Circuit de Monaco",
             raceTimestamp = System.currentTimeMillis() + 9 * 24 * 60 * 60 * 1000L + 14 * 3600 * 1000L
         ),
+        weather = "22.4°C",
         onBack = {}
     )
 }

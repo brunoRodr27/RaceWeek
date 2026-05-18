@@ -22,6 +22,8 @@ class GetAllRacesUseCase @Inject constructor(
                     raceTimestamp = remote.raceTimestampMillis,
                     timezone = remote.timezone,
                     laps = remote.laps,
+                    lat = remote.lat,
+                    lon = remote.lon,
                     sessions = remote.sessions.map { s ->
                         RaceSession(key = s.key, timestamp = s.timestampMillis)
                     }

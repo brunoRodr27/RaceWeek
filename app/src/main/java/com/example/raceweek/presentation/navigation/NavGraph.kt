@@ -74,7 +74,7 @@ fun NavGraph(navController: NavHostController) {
             val raceId = backStack.arguments?.getString("raceId") ?: ""
             DetailRoute(
                 raceId = raceId,
-                viewModel = viewModel,
+                agendaViewModel = viewModel,
                 onBack = { navController.popBackStack() }
             )
         }
