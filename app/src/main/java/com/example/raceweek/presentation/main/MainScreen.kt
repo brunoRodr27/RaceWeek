@@ -42,12 +42,14 @@ fun MainRoute(
     val heroRaceInfo by viewModel.heroRaceInfo.collectAsState()
     val upcomingRaces by viewModel.upcomingRaces.collectAsState()
     val calendarRaces by viewModel.calendarRaces.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     MainScreen(
         selectedCategory = selectedCategory,
         categories = categories,
         upcomingRaces = upcomingRaces,
         heroRaceInfo = heroRaceInfo,
         calendarRaces = calendarRaces,
+        isLoading = isLoading,
         onCategorySelect = viewModel::selectCategory,
         onRaceClick = onNavigateToDetail,
         onHeroExpired = viewModel::refreshNextRace,
@@ -62,6 +64,7 @@ fun MainScreen(
     upcomingRaces: List<UpcomingRace>,
     heroRaceInfo: HeroRaceInfo?,
     calendarRaces: Map<LocalDate, List<CalendarEvent>>,
+    isLoading: Boolean,
     onCategorySelect: (String) -> Unit,
     onRaceClick: (String) -> Unit,
     onHeroExpired: () -> Unit = {},
@@ -92,6 +95,7 @@ fun MainScreen(
                         selectedCategory = selectedCategory,
                         allRaces = upcomingRaces,
                         heroRaceInfo = heroRaceInfo,
+                        isLoading = isLoading,
                         onCategorySelect = onCategorySelect,
                         onRaceClick = onRaceClick,
                         onHeroExpired = onHeroExpired
@@ -159,6 +163,7 @@ private fun MainScreenPreview() {
         upcomingRaces = emptyList(),
         heroRaceInfo = null,
         calendarRaces = emptyMap(),
+        isLoading = false,
         onCategorySelect = {},
         onRaceClick = {},
         onNavigateToSettings = {}

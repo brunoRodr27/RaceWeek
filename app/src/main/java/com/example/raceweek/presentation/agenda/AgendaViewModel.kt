@@ -61,6 +61,9 @@ class AgendaViewModel @Inject constructor(
     private val activeDescriptions = activeCategoriesFlow
         .map { list -> list.map { it.description }.toSet() }
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     private val _heroRaceInfo = MutableStateFlow<HeroRaceInfo?>(null)
     val heroRaceInfo: StateFlow<HeroRaceInfo?> = _heroRaceInfo.asStateFlow()
 
@@ -101,6 +104,7 @@ class AgendaViewModel @Inject constructor(
             val upcoming = all.filter { it.raceTimestamp.reanchorToRaceTimezone(it.timezone) >= now }
             _upcomingRaces.value = upcoming
             _heroRaceInfo.value = getNextRaceUseCase(upcoming)
+            _isLoading.value = false
             runCatching { scheduleNotificationsUseCase(upcoming) }
         }
 

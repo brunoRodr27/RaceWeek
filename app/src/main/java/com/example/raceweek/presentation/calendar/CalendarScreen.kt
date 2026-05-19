@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,12 +30,16 @@ import com.example.raceweek.R
 import com.example.raceweek.domain.model.CalendarEvent
 import com.example.raceweek.presentation.utils.deviceTzAbbr
 import com.example.raceweek.ui.theme.*
+import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+
+// 10 anos para cada direção a partir do mês atual
+private const val PAGER_HALF = 120
 
 @Composable
 fun CalendarRoute(
@@ -48,37 +54,36 @@ fun CalendarScreen(
     calendarRaces: Map<LocalDate, List<CalendarEvent>>,
     modifier: Modifier = Modifier
 ) {
-    var currentYearMonth by remember { mutableStateOf(YearMonth.now()) }
+    val baseMonth = remember { YearMonth.now().minusMonths(PAGER_HALF.toLong()) }
+    val pagerState = rememberPagerState(
+        initialPage = PAGER_HALF,
+        pageCount = { PAGER_HALF * 2 + 1 }
+    )
     val today = remember { LocalDate.now() }
     var selectedDay by remember { mutableStateOf<LocalDate?>(null) }
+    val scope = rememberCoroutineScope()
+
+    // Rótulo do mês derivado diretamente do estado do pager — atualiza em tempo real
+    // enquanto o usuário arrasta, sem recomposição desnecessária de toda a tela.
+    val monthLabel by remember {
+        derivedStateOf {
+            val ym = baseMonth.plusMonths(pagerState.currentPage.toLong())
+            val name = ym.month
+                .getDisplayName(TextStyle.FULL_STANDALONE, Locale("pt", "BR"))
+                .replaceFirstChar { it.uppercase() }
+            "$name ${ym.year}"
+        }
+    }
+
+    // Limpa o dia selecionado apenas quando a navegação de mês se consolida (swipe completo)
+    LaunchedEffect(pagerState.settledPage) { selectedDay = null }
 
     val daysOfWeek = remember {
         val locale = Locale("pt", "BR")
-        listOf(DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
-               DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY)
-            .map { it.getDisplayName(TextStyle.NARROW, locale) }
-    }
-
-    // DayOfWeek.value: Mon=1..Sun=7 → % 7 → Sun=0, Mon=1, ..., Sat=6
-    val firstDayIndex = currentYearMonth.atDay(1).dayOfWeek.value % 7
-    val daysInMonth = currentYearMonth.lengthOfMonth()
-    val prevMonthLength = currentYearMonth.minusMonths(1).lengthOfMonth()
-
-    val allCells: List<Pair<Int?, Boolean>> = run {
-        val prev = if (firstDayIndex > 0)
-            (prevMonthLength - firstDayIndex + 1..prevMonthLength).map { Pair(it, false) }
-        else emptyList()
-        val curr = (1..daysInMonth).map { Pair(it, true) }
-        prev + curr
-    }
-    val remainder = if (allCells.size % 7 == 0) 0 else 7 - allCells.size % 7
-    val rows = (allCells + List(remainder) { Pair<Int?, Boolean>(null, false) }).chunked(7)
-
-    val monthLabel = remember(currentYearMonth) {
-        val name = currentYearMonth.month
-            .getDisplayName(TextStyle.FULL_STANDALONE, Locale("pt", "BR"))
-            .replaceFirstChar { it.uppercase() }
-        "$name ${currentYearMonth.year}"
+        listOf(
+            DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY,
+            DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY
+        ).map { it.getDisplayName(TextStyle.NARROW, locale) }
     }
 
     Column(
@@ -87,9 +92,11 @@ fun CalendarScreen(
             .verticalScroll(rememberScrollState())
             .padding(12.dp)
     ) {
-        // Cabeçalho: mês/ano + navegação
+        // Cabeçalho: mês/ano + botões de navegação
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -101,17 +108,19 @@ fun CalendarScreen(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CalNavBtn(icon = R.drawable.ic_back) {
-                    currentYearMonth = currentYearMonth.minusMonths(1)
-                    selectedDay = null
+                    scope.launch {
+                        pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                    }
                 }
                 CalNavBtn(icon = R.drawable.ic_next) {
-                    currentYearMonth = currentYearMonth.plusMonths(1)
-                    selectedDay = null
+                    scope.launch {
+                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                    }
                 }
             }
         }
 
-        // Dias da semana
+        // Cabeçalho dos dias da semana — fixo, fora do pager
         Row(modifier = Modifier.fillMaxWidth()) {
             daysOfWeek.forEach { dow ->
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
@@ -121,63 +130,29 @@ fun CalendarScreen(
         }
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Grade do calendário
-        rows.forEach { row ->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                row.forEach { (day, isCurrent) ->
-                    val date = if (isCurrent && day != null) currentYearMonth.atDay(day) else null
-                    val hasRace = date != null && calendarRaces.containsKey(date)
-                    val isSelected = date != null && date == selectedDay
-                    val isToday = date == today
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .padding(2.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) Accent else Color.Transparent)
-                            .clickable(enabled = isCurrent && day != null) { selectedDay = date },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = day?.toString() ?: "",
-                                fontSize = 12.sp,
-                                color = when {
-                                    isSelected  -> Color.White
-                                    !isCurrent  -> TextMuted.copy(alpha = 0.22f)
-                                    hasRace     -> TextPrimary
-                                    isToday     -> TextPrimary
-                                    else        -> TextSecondary
-                                },
-                                fontWeight = if (isToday || isSelected) FontWeight.SemiBold else FontWeight.Normal
-                            )
-                            when {
-                                hasRace -> Box(
-                                    modifier = Modifier
-                                        .size(4.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isSelected) Color.White else Accent)
-                                )
-                                isToday && !isSelected -> Box(
-                                    modifier = Modifier
-                                        .size(3.dp)
-                                        .clip(CircleShape)
-                                        .background(TextSecondary)
-                                )
-                                else -> Spacer(modifier = Modifier.size(4.dp))
-                            }
-                        }
-                    }
-                }
-            }
+        // Grade do calendário — deslize horizontalmente para navegar entre meses.
+        // beyondViewportPageCount = 1 mantém o mês anterior e o próximo compostos,
+        // eliminando qualquer lag no início do arrasto.
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+            beyondViewportPageCount = 1
+        ) { page ->
+            MonthGrid(
+                yearMonth = baseMonth.plusMonths(page.toLong()),
+                calendarRaces = calendarRaces,
+                today = today,
+                selectedDay = selectedDay,
+                onDaySelected = { selectedDay = it }
+            )
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Seção de eventos
-        val eventFormatter = remember { DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("pt", "BR")) }
+        // Seção de eventos do dia selecionado
+        val eventFormatter = remember {
+            DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("pt", "BR"))
+        }
         val eventLabel = if (selectedDay != null)
             stringResource(R.string.events_on_date, selectedDay!!.format(eventFormatter).uppercase())
         else
@@ -201,17 +176,103 @@ fun CalendarScreen(
                 text = stringResource(R.string.no_events_this_day),
                 fontSize = 12.sp,
                 color = TextMuted,
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             )
             else -> Text(
                 text = stringResource(R.string.tap_day_hint),
                 fontSize = 12.sp,
                 color = TextMuted,
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             )
         }
     }
 }
+
+// ── Grade mensal ──────────────────────────────────────────────────────────────
+
+@Composable
+private fun MonthGrid(
+    yearMonth: YearMonth,
+    calendarRaces: Map<LocalDate, List<CalendarEvent>>,
+    today: LocalDate,
+    selectedDay: LocalDate?,
+    onDaySelected: (LocalDate?) -> Unit
+) {
+    // DayOfWeek.value: Seg=1..Dom=7 → % 7 → Dom=0, Seg=1, ..., Sáb=6
+    val firstDayIndex = yearMonth.atDay(1).dayOfWeek.value % 7
+    val daysInMonth = yearMonth.lengthOfMonth()
+    val prevMonthLength = yearMonth.minusMonths(1).lengthOfMonth()
+
+    // Sempre 42 células (6 linhas × 7 colunas) para manter altura constante entre meses
+    // e evitar saltos de layout durante o swipe.
+    val allCells: List<Pair<Int?, Boolean>> = buildList {
+        repeat(firstDayIndex) { i ->
+            add(Pair(prevMonthLength - firstDayIndex + 1 + i, false))
+        }
+        repeat(daysInMonth) { add(Pair(it + 1, true)) }
+        repeat(42 - size) { add(Pair(null, false)) }
+    }
+
+    Column {
+        allCells.chunked(7).forEach { row ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                row.forEach { (day, isCurrent) ->
+                    val date = if (isCurrent && day != null) yearMonth.atDay(day) else null
+                    val hasRace = date != null && calendarRaces.containsKey(date)
+                    val isSelected = date != null && date == selectedDay
+                    val isToday = date == today
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .padding(2.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSelected) Accent else Color.Transparent)
+                            .clickable(enabled = isCurrent && day != null) { onDaySelected(date) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = day?.toString() ?: "",
+                                fontSize = 12.sp,
+                                color = when {
+                                    isSelected -> Color.White
+                                    !isCurrent -> TextMuted.copy(alpha = 0.22f)
+                                    hasRace    -> TextPrimary
+                                    isToday    -> TextPrimary
+                                    else       -> TextSecondary
+                                },
+                                fontWeight = if (isToday || isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                            when {
+                                hasRace -> Box(
+                                    modifier = Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isSelected) Color.White else Accent)
+                                )
+                                isToday && !isSelected -> Box(
+                                    modifier = Modifier
+                                        .size(3.dp)
+                                        .clip(CircleShape)
+                                        .background(TextSecondary)
+                                )
+                                else -> Spacer(modifier = Modifier.size(4.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Componentes ───────────────────────────────────────────────────────────────
 
 @Composable
 private fun CalendarEventCard(event: CalendarEvent) {
@@ -296,6 +357,8 @@ private fun CalNavBtn(@DrawableRes icon: Int, onClick: () -> Unit) {
         )
     }
 }
+
+// ── Preview ───────────────────────────────────────────────────────────────────
 
 @Preview(showBackground = true, backgroundColor = 0xFF161616)
 @Composable
