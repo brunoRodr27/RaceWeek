@@ -6,9 +6,9 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "settings")
 data class SettingsEntity(
     @PrimaryKey val id: Int = 1,
-    val notifications: String = "T",
+    val notifications: Boolean = true,
     val time: String = "B",
-    val practices: String = "T",
-    val qualifyings: String = "T",
-    val races: String = "T"
+    val practices: Boolean = true,
+    val qualifyings: Boolean = true,
+    val races: Boolean = true
 )

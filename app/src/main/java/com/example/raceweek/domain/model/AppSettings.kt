@@ -1,9 +1,9 @@
 package com.example.raceweek.domain.model
 
-enum class NotificationTime(val code: String, val label: String) {
-    TWO_HOURS("A", "2 horas"),
-    ONE_HOUR("B", "1 hora"),
-    THIRTY_MIN("C", "30 min");
+enum class NotificationTime(val code: String) {
+    TWO_HOURS("A"),
+    ONE_HOUR("B"),
+    THIRTY_MIN("C");
 
     companion object {
         fun fromCode(code: String) = entries.find { it.code == code } ?: ONE_HOUR

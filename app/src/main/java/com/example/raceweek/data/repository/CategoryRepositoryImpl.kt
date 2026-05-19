@@ -20,8 +20,6 @@ class CategoryRepositoryImpl @Inject constructor(
     override fun getAllCategories(): Flow<List<Category>> =
         dao.getAll().map { list -> list.map { it.toDomain() } }
 
-    // Só insere categorias genuinamente novas; preserva status e order das existentes.
-    // Novas categorias recebem order = MAX(order) + 1, garantindo unicidade.
     override suspend fun syncCategories() {
         remoteDataSource.fetchCategories().onSuccess { remoteList ->
             remoteList.forEach { remote ->
@@ -31,7 +29,7 @@ class CategoryRepositoryImpl @Inject constructor(
                         listOf(
                             CategoryEntity(
                                 name = remote.name,
-                                status = "T",
+                                active = true,
                                 description = remote.description,
                                 order = nextOrder
                             )
@@ -43,10 +41,9 @@ class CategoryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateCategoryStatus(id: Int, active: Boolean) {
-        dao.updateStatus(id, if (active) "T" else "F")
+        dao.updateActive(id, active)
     }
 
-    // Recebe os IDs na nova sequência desejada e atribui order 0, 1, 2...
     override suspend fun reorderCategories(orderedIds: List<Int>) {
         orderedIds.forEachIndexed { index, id ->
             dao.updateOrder(id, index)
@@ -56,7 +53,7 @@ class CategoryRepositoryImpl @Inject constructor(
     private fun CategoryEntity.toDomain() = Category(
         id = id,
         name = name,
-        active = status == "T",
+        active = active,
         description = description,
         order = order
     )

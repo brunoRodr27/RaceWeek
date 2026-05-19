@@ -27,7 +27,8 @@ object DatabaseModule {
             .addMigrations(
                 RaceWeekDatabase.MIGRATION_1_2,
                 RaceWeekDatabase.MIGRATION_2_3,
-                RaceWeekDatabase.MIGRATION_3_4
+                RaceWeekDatabase.MIGRATION_3_4,
+                RaceWeekDatabase.MIGRATION_4_5
             )
             .build()
 

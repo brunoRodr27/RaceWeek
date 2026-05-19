@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.raceweek.R
 import com.example.raceweek.domain.model.HeroRaceInfo
-import com.example.raceweek.presentation.utils.toCorrectEpochMillis
+import com.example.raceweek.domain.util.reanchorToRaceTimezone
 import com.example.raceweek.ui.theme.*
 import kotlinx.coroutines.delay
 
@@ -36,7 +36,7 @@ fun HeroCard(
     val context = LocalContext.current
 
     val correctRaceEpoch = remember(heroRace.raceTimestamp, heroRace.timezone) {
-        heroRace.raceTimestamp.toCorrectEpochMillis(heroRace.timezone)
+        heroRace.raceTimestamp.reanchorToRaceTimezone(heroRace.timezone)
     }
 
     // Dispara onExpired ao zerar o countdown, ou imediatamente se o evento já passou

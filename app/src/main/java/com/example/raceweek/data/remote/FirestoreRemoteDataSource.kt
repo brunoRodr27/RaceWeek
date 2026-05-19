@@ -7,6 +7,9 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -23,16 +26,6 @@ data class RemoteCategory(
 data class RemoteRaceSession(
     val key: String,
     val timestampMillis: Long
-)
-
-data class RemoteHeroRace(
-    val id: String,
-    val flagResName: String,
-    val name: String,
-    val country: String,
-    val location: String,
-    val raceTimestampMillis: Long,
-    val timezone: String = "UTC"
 )
 
 data class RemoteUpcomingRace(
@@ -71,70 +64,9 @@ class FirestoreRemoteDataSource @Inject constructor() {
         }
     }
 
-    // Navega pelo collectionGroup "extra" para encontrar o documento "schedule" com o
-    // campo "race" (Timestamp) mais próximo da data atual.
-    suspend fun fetchNextRace(): Result<RemoteHeroRace?> = runCatching {
-        val now = Timestamp.now()
-        suspendCancellableCoroutine { continuation ->
-            db.collectionGroup("extra")
-                .whereGreaterThanOrEqualTo("race", now)
-                .orderBy("race")
-                .limit(1)
-                .get()
-                .addOnSuccessListener { scheduleSnapshot ->
-                    val scheduleDoc = scheduleSnapshot.documents.firstOrNull()
-                    if (scheduleDoc == null) {
-                        continuation.resume(null)
-                        return@addOnSuccessListener
-                    }
-
-                    val raceTimestamp = scheduleDoc.getTimestamp("race")
-                    if (raceTimestamp == null) {
-                        continuation.resume(null)
-                        return@addOnSuccessListener
-                    }
-
-                    // Caminho: categories/{cat}/{raceId}/info/extra/schedule
-                    val infoDocRef = scheduleDoc.reference.parent.parent
-                    if (infoDocRef == null) {
-                        continuation.resume(null)
-                        return@addOnSuccessListener
-                    }
-
-                    // Constrói o id igual ao usado em fetchUpcomingRaces()
-                    val raceCollectionId = infoDocRef.parent.id
-                    val categoryId = infoDocRef.parent.parent?.id ?: ""
-                    val raceId = "${categoryId}_${raceCollectionId}"
-
-                    infoDocRef.get()
-                        .addOnSuccessListener { infoDoc ->
-                            continuation.resume(
-                                RemoteHeroRace(
-                                    id = raceId,
-                                    flagResName = infoDoc.getString("flag") ?: "",
-                                    name = infoDoc.getString("name") ?: "",
-                                    country = infoDoc.getString("country") ?: "",
-                                    location = infoDoc.getString("location") ?: "",
-                                    raceTimestampMillis = raceTimestamp.toDate().time,
-                                    timezone = infoDoc.getString("timezone") ?: "UTC"
-                                )
-                            )
-                        }
-                        .addOnFailureListener { continuation.resumeWithException(it) }
-                }
-                .addOnFailureListener { continuation.resumeWithException(it) }
-        }
-    }
-
-    // Apenas corridas cuja corrida principal ainda não aconteceu (Agenda).
-    suspend fun fetchUpcomingRaces(): Result<List<RemoteUpcomingRace>> =
-        buildRaceList(
-            db.collectionGroup("extra")
-                .whereGreaterThanOrEqualTo("race", Timestamp.now())
-                .orderBy("race")
-        )
-
-    // Todas as corridas — passadas e futuras — ordenadas por data (Calendário).
+    // Todas as corridas ordenadas por data. A filtragem de "futuras" é feita no app após
+    // reanchorar o timestamp pelo fuso correto da corrida — não pode ser feita no Firestore
+    // porque o timestamp armazenado representa o horário local como se fosse UTC-3.
     suspend fun fetchAllRaces(): Result<List<RemoteUpcomingRace>> =
         buildRaceList(
             db.collectionGroup("extra").orderBy("race")
@@ -143,44 +75,67 @@ class FirestoreRemoteDataSource @Inject constructor() {
     private suspend fun buildRaceList(query: Query): Result<List<RemoteUpcomingRace>> {
         return try {
             val scheduleSnapshot = query.get().await()
+
+            // Estrutura intermediária para guardar os dados extraídos de cada schedule doc.
+            data class RaceCandidate(
+                val raceTimestamp: Timestamp,
+                val infoDoc: DocumentSnapshot,
+                val raceCollectionId: String,
+                val categoryDocPath: String,
+                val categoryDocRef: com.google.firebase.firestore.DocumentReference,
+                val sessions: List<RemoteRaceSession>
+            )
+
+            // Lê todos os info docs em paralelo — elimina N leituras sequenciais.
+            val candidates: List<RaceCandidate> = coroutineScope {
+                scheduleSnapshot.documents.map { scheduleDoc ->
+                    async {
+                        val raceTimestamp = scheduleDoc.getTimestamp("race") ?: return@async null
+                        val infoDocRef = scheduleDoc.reference.parent.parent ?: return@async null
+                        val raceCollectionRef = infoDocRef.parent
+                        val categoryDocRef = raceCollectionRef.parent ?: return@async null
+
+                        val infoDoc = infoDocRef.get().await()
+                        if (!infoDoc.exists()) return@async null
+
+                        val sessions = scheduleDoc.data?.entries?.mapNotNull { (key, value) ->
+                            val ts = (value as? Timestamp)?.toDate()?.time ?: return@mapNotNull null
+                            RemoteRaceSession(key = key, timestampMillis = ts)
+                        }?.sortedBy { it.timestampMillis } ?: emptyList()
+
+                        RaceCandidate(
+                            raceTimestamp = raceTimestamp,
+                            infoDoc = infoDoc,
+                            raceCollectionId = raceCollectionRef.id,
+                            categoryDocPath = categoryDocRef.path,
+                            categoryDocRef = categoryDocRef,
+                            sessions = sessions
+                        )
+                    }
+                }.awaitAll().filterNotNull()
+            }
+
+            // Lê categorias únicas (cache evita reads duplicados por categoria).
             val categoryCache = mutableMapOf<String, DocumentSnapshot>()
-            val races = mutableListOf<RemoteUpcomingRace>()
+            val races = candidates.mapNotNull { candidate ->
+                val categoryDoc = categoryCache[candidate.categoryDocPath]
+                    ?: candidate.categoryDocRef.get().await()
+                        .also { categoryCache[candidate.categoryDocPath] = it }
+                if (!categoryDoc.exists()) return@mapNotNull null
 
-            for (scheduleDoc in scheduleSnapshot.documents) {
-                val raceTimestamp = scheduleDoc.getTimestamp("race") ?: continue
-
-                // categories/{cat}/{raceId}/infos/extra/schedule
-                val infoDocRef = scheduleDoc.reference.parent.parent ?: continue
-                val raceCollectionRef = infoDocRef.parent
-                val categoryDocRef = raceCollectionRef.parent ?: continue
-
-                val infoDoc = infoDocRef.get().await()
-                if (!infoDoc.exists()) continue
-
-                val categoryDoc = categoryCache[categoryDocRef.path]
-                    ?: categoryDocRef.get().await().also { categoryCache[categoryDocRef.path] = it }
-                if (!categoryDoc.exists()) continue
-
-                val sessions = scheduleDoc.data?.entries?.mapNotNull { (key, value) ->
-                    val ts = (value as? Timestamp)?.toDate()?.time ?: return@mapNotNull null
-                    RemoteRaceSession(key = key, timestampMillis = ts)
-                }?.sortedBy { it.timestampMillis } ?: emptyList()
-
-                races.add(
-                    RemoteUpcomingRace(
-                        id = "${categoryDoc.id}_${raceCollectionRef.id}",
-                        flagResName = infoDoc.getString("flag") ?: "",
-                        categoryDescription = categoryDoc.getString("description") ?: categoryDoc.id,
-                        name = infoDoc.getString("name") ?: "",
-                        country = infoDoc.getString("country") ?: "",
-                        location = infoDoc.getString("location") ?: "",
-                        raceTimestampMillis = raceTimestamp.toDate().time,
-                        timezone = infoDoc.getString("timezone") ?: "UTC",
-                        laps = infoDoc.getLong("laps")?.toInt(),
-                        lat = infoDoc.safeDouble("lat"),
-                        lon = infoDoc.safeDouble("lon"),
-                        sessions = sessions
-                    )
+                RemoteUpcomingRace(
+                    id = "${categoryDoc.id}_${candidate.raceCollectionId}",
+                    flagResName = candidate.infoDoc.getString("flag") ?: "",
+                    categoryDescription = categoryDoc.getString("description") ?: categoryDoc.id,
+                    name = candidate.infoDoc.getString("name") ?: "",
+                    country = candidate.infoDoc.getString("country") ?: "",
+                    location = candidate.infoDoc.getString("location") ?: "",
+                    raceTimestampMillis = candidate.raceTimestamp.toDate().time,
+                    timezone = candidate.infoDoc.getString("timezone") ?: "UTC",
+                    laps = candidate.infoDoc.getLong("laps")?.toInt(),
+                    lat = candidate.infoDoc.safeDouble("lat"),
+                    lon = candidate.infoDoc.safeDouble("lon"),
+                    sessions = candidate.sessions
                 )
             }
 

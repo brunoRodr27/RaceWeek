@@ -17,19 +17,24 @@ class WeatherRemoteDataSource @Inject constructor(
         date: String,
         targetHour: String,
         timezone: String
-    ): Result<String> = runCatching {
-        val response: WeatherResponse = client.get("https://api.open-meteo.com/v1/forecast") {
-            parameter("latitude", lat)
-            parameter("longitude", lon)
-            parameter("hourly", "temperature_2m")
-            parameter("start_date", date)
-            parameter("end_date", date)
-            parameter("timezone", timezone)
-        }.body()
+    ): Result<String> {
+        return try {
+            val response: WeatherResponse = client.get("https://api.open-meteo.com/v1/forecast") {
+                parameter("latitude", lat)
+                parameter("longitude", lon)
+                parameter("hourly", "temperature_2m")
+                parameter("start_date", date)
+                parameter("end_date", date)
+                parameter("timezone", timezone)
+            }.body()
 
-        val index = response.hourly.time.indexOfFirst { it == targetHour }
-        require(index >= 0) { "Hora $targetHour não encontrada na resposta da API" }
+            val index = response.hourly.time.indexOfFirst { it == targetHour }
+                .takeIf { it >= 0 }
+                ?: return Result.failure(NoSuchElementException("Hora $targetHour não encontrada na resposta da API"))
 
-        "%.1f°C".format(response.hourly.temperature2m[index])
+            Result.success("%.1f°C".format(response.hourly.temperature2m[index]))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

@@ -18,7 +18,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.raceweek.R
-import com.example.raceweek.presentation.components.RaceWeekLogo
 import com.example.raceweek.ui.theme.*
 import kotlinx.coroutines.delay
 

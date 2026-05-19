@@ -37,6 +37,12 @@
     <string name="location_format">%1$s · %2$s</string>
     <string name="time_timezone_format">%1$s · %2$s</string>
 
+    <!-- Notifications -->
+    <string name="notification_channel_description">Notificações de sessões de corrida</string>
+    <string name="notif_advance_2h">2 horas</string>
+    <string name="notif_advance_1h">1 hora</string>
+    <string name="notif_advance_30min">30 min</string>
+
     <!-- Settings Screen -->
     <string name="settings">Configurações</string>
     <string name="notifications">Notificações</string>

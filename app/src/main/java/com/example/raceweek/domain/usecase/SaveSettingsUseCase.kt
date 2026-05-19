@@ -12,11 +12,11 @@ class SaveSettingsUseCase @Inject constructor(
         settingsDao.upsert(
             SettingsEntity(
                 id = 1,
-                notifications = if (settings.notifications) "T" else "F",
+                notifications = settings.notifications,
                 time = settings.time.code,
-                practices = if (settings.practices) "T" else "F",
-                qualifyings = if (settings.qualifyings) "T" else "F",
-                races = if (settings.races) "T" else "F"
+                practices = settings.practices,
+                qualifyings = settings.qualifyings,
+                races = settings.races
             )
         )
     }

@@ -1,15 +1,21 @@
 package com.example.raceweek.domain.usecase
 
-import com.example.raceweek.data.local.dao.SettingsDao
-import com.example.raceweek.data.local.entity.SettingsEntity
+import android.content.Context
+import com.example.raceweek.R
 import com.example.raceweek.data.notification.NotificationScheduler
+import com.example.raceweek.domain.model.NotificationTime
 import com.example.raceweek.domain.model.UpcomingRace
+import com.example.raceweek.domain.util.reanchorToRaceTimezone
+import com.example.raceweek.domain.util.toSessionLabel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class ScheduleNotificationsUseCase @Inject constructor(
     private val getUpcomingRacesUseCase: GetUpcomingRacesUseCase,
-    private val settingsDao: SettingsDao,
-    private val scheduler: NotificationScheduler
+    private val getSettingsUseCase: GetSettingsUseCase,
+    private val scheduler: NotificationScheduler,
+    @ApplicationContext private val context: Context
 ) {
     private enum class SessionType { PRACTICE, QUALIFYING, RACE }
 
@@ -22,18 +28,18 @@ class ScheduleNotificationsUseCase @Inject constructor(
             }
         }
 
-        val settings = settingsDao.get() ?: SettingsEntity()
-        if (settings.notifications != "T") return
+        val settings = getSettingsUseCase().first()
+        if (!settings.notifications) return
 
         val advanceMillis = when (settings.time) {
-            "A" -> 7_200_000L
-            "C" -> 1_800_000L
-            else -> 3_600_000L
+            NotificationTime.TWO_HOURS  -> 7_200_000L
+            NotificationTime.THIRTY_MIN -> 1_800_000L
+            NotificationTime.ONE_HOUR   -> 3_600_000L
         }
         val advanceLabel = when (settings.time) {
-            "A" -> "2 horas"
-            "C" -> "30 min"
-            else -> "1 hora"
+            NotificationTime.TWO_HOURS  -> context.getString(R.string.notif_advance_2h)
+            NotificationTime.THIRTY_MIN -> context.getString(R.string.notif_advance_30min)
+            NotificationTime.ONE_HOUR   -> context.getString(R.string.notif_advance_1h)
         }
         val now = System.currentTimeMillis()
 
@@ -41,13 +47,13 @@ class ScheduleNotificationsUseCase @Inject constructor(
             race.sessions.forEach { session ->
                 val type = sessionType(session.key)
                 val enabled = when (type) {
-                    SessionType.PRACTICE -> settings.practices == "T"
-                    SessionType.QUALIFYING -> settings.qualifyings == "T"
-                    SessionType.RACE -> settings.races == "T"
+                    SessionType.PRACTICE   -> settings.practices
+                    SessionType.QUALIFYING -> settings.qualifyings
+                    SessionType.RACE       -> settings.races
                 }
                 if (!enabled) return@forEach
 
-                val triggerAt = session.timestamp - advanceMillis
+                val triggerAt = session.timestamp.reanchorToRaceTimezone(race.timezone) - advanceMillis
                 if (triggerAt <= now) return@forEach
 
                 scheduler.schedule(
@@ -64,20 +70,8 @@ class ScheduleNotificationsUseCase @Inject constructor(
         (raceId + "_" + sessionKey).hashCode()
 
     private fun sessionType(key: String): SessionType = when {
-        key.startsWith("practice") -> SessionType.PRACTICE
-        key.contains("qualifying") -> SessionType.QUALIFYING
-        else -> SessionType.RACE
-    }
-
-    private fun String.toSessionLabel(): String = when (this.lowercase()) {
-        "practice" -> "Treino Livre"
-        "practiceone" -> "Treino Livre 1"
-        "practicetwo" -> "Treino Livre 2"
-        "practicethree" -> "Treino Livre 3"
-        "qualifying" -> "Classificação"
-        "sprintqualifying" -> "Classificação Sprint"
-        "sprint" -> "Corrida Sprint"
-        "race" -> "Corrida"
-        else -> replaceFirstChar { it.uppercase() }
+        key.startsWith("practice")      -> SessionType.PRACTICE
+        key.contains("qualifying")      -> SessionType.QUALIFYING
+        else                            -> SessionType.RACE
     }
 }

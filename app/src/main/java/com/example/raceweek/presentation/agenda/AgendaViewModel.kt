@@ -8,9 +8,9 @@ import com.example.raceweek.domain.model.UpcomingRace
 import com.example.raceweek.domain.usecase.GetAllRacesUseCase
 import com.example.raceweek.domain.usecase.GetCategoriesUseCase
 import com.example.raceweek.domain.usecase.GetNextRaceUseCase
-import com.example.raceweek.domain.usecase.GetUpcomingRacesUseCase
 import com.example.raceweek.domain.usecase.ScheduleNotificationsUseCase
 import com.example.raceweek.domain.usecase.SyncCategoriesUseCase
+import com.example.raceweek.domain.util.reanchorToRaceTimezone
 import com.example.raceweek.presentation.utils.toDeviceTimeString
 import com.example.raceweek.presentation.utils.toSessionDisplayName
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
+import java.time.ZoneId
 import javax.inject.Inject
 
 const val CATEGORY_ALL = "Todos"
@@ -36,7 +36,6 @@ class AgendaViewModel @Inject constructor(
     getCategoriesUseCase: GetCategoriesUseCase,
     private val syncCategoriesUseCase: SyncCategoriesUseCase,
     private val getNextRaceUseCase: GetNextRaceUseCase,
-    private val getUpcomingRacesUseCase: GetUpcomingRacesUseCase,
     private val getAllRacesUseCase: GetAllRacesUseCase,
     private val scheduleNotificationsUseCase: ScheduleNotificationsUseCase
 ) : ViewModel() {
@@ -92,20 +91,24 @@ class AgendaViewModel @Inject constructor(
 
     init {
         viewModelScope.launch { runCatching { syncCategoriesUseCase() } }
-        viewModelScope.launch { _heroRaceInfo.value = getNextRaceUseCase() }
-        viewModelScope.launch { _allRaces.value = getAllRacesUseCase() }
-        // Carrega corridas e agenda notificações com os mesmos dados — evita segunda chamada
-        // ao Firestore que poderia retornar vazia por race condition na inicialização.
+
+        // Uma única leitura Firestore: todas as corridas servem tanto para o calendário
+        // quanto para a agenda (upcoming = filtro por timestamp reanchorado) e HeroCard.
         viewModelScope.launch {
-            val races = getUpcomingRacesUseCase()
-            _upcomingRaces.value = races
-            runCatching { scheduleNotificationsUseCase(races) }
+            val all = getAllRacesUseCase()
+            val now = System.currentTimeMillis()
+            _allRaces.value = all
+            val upcoming = all.filter { it.raceTimestamp.reanchorToRaceTimezone(it.timezone) >= now }
+            _upcomingRaces.value = upcoming
+            _heroRaceInfo.value = getNextRaceUseCase(upcoming)
+            runCatching { scheduleNotificationsUseCase(upcoming) }
         }
-        // Sempre que as categorias ativas mudarem, rebusca o próximo evento do HeroCard.
-        // drop(1) descarta a emissão inicial para não duplicar a busca já feita acima.
+
+        // Sempre que as categorias ativas mudarem, recalcula o HeroCard reaproveitando
+        // as corridas já carregadas. drop(1) descarta a emissão inicial.
         viewModelScope.launch {
             activeCategoriesFlow.drop(1).collect {
-                _heroRaceInfo.value = getNextRaceUseCase()
+                _heroRaceInfo.value = getNextRaceUseCase(_upcomingRaces.value.ifEmpty { null })
             }
         }
     }
@@ -115,7 +118,9 @@ class AgendaViewModel @Inject constructor(
     }
 
     fun refreshNextRace() {
-        viewModelScope.launch { _heroRaceInfo.value = getNextRaceUseCase() }
+        viewModelScope.launch {
+            _heroRaceInfo.value = getNextRaceUseCase(_upcomingRaces.value.ifEmpty { null })
+        }
     }
 
     fun getRaceById(id: String): UpcomingRace? = upcomingRaces.value.find { it.id == id }
@@ -124,8 +129,12 @@ class AgendaViewModel @Inject constructor(
         val byDate = mutableMapOf<LocalDate, MutableList<CalendarEvent>>()
         for (race in races) {
             for (session in race.sessions) {
-                val date = Instant.ofEpochMilli(session.timestamp)
-                    .atZone(ZoneOffset.UTC)
+                // Reancora o timestamp pelo fuso real da corrida antes de calcular a data
+                // no fuso do dispositivo — evita que sessões próximas à meia-noite apareçam
+                // no dia errado do calendário.
+                val correctedEpoch = session.timestamp.reanchorToRaceTimezone(race.timezone)
+                val date = Instant.ofEpochMilli(correctedEpoch)
+                    .atZone(ZoneId.systemDefault())
                     .toLocalDate()
                 byDate.getOrPut(date) { mutableListOf() }.add(
                     CalendarEvent(
@@ -134,7 +143,7 @@ class AgendaViewModel @Inject constructor(
                         time = session.timestamp.toDeviceTimeString(race.timezone),
                         series = race.categoryDescription,
                         sessionLabel = session.key.toSessionDisplayName(),
-                        timestampMillis = session.timestamp
+                        timestampMillis = correctedEpoch
                     )
                 )
             }

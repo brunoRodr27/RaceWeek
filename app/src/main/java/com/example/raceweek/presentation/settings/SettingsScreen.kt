@@ -147,7 +147,11 @@ fun SettingsScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = option.label,
+                                        text = when (option) {
+                                            NotificationTime.TWO_HOURS -> stringResource(R.string.notif_advance_2h)
+                                            NotificationTime.ONE_HOUR -> stringResource(R.string.notif_advance_1h)
+                                            NotificationTime.THIRTY_MIN -> stringResource(R.string.notif_advance_30min)
+                                        },
                                         fontSize = 11.sp,
                                         color = if (selected) Color.White else TextSecondary
                                     )

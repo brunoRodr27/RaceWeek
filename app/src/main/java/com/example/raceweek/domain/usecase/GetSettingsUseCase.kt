@@ -16,9 +16,9 @@ class GetSettingsUseCase @Inject constructor(
 }
 
 internal fun SettingsEntity.toDomain() = AppSettings(
-    notifications = notifications == "T",
+    notifications = notifications,
     time = NotificationTime.fromCode(time),
-    practices = practices == "T",
-    qualifyings = qualifyings == "T",
-    races = races == "T"
+    practices = practices,
+    qualifyings = qualifyings,
+    races = races
 )

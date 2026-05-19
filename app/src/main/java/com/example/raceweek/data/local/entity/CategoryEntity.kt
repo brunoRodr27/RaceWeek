@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 data class CategoryEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
-    val status: String,
+    val active: Boolean,
     val description: String = "",
     @ColumnInfo(name = "order") val order: Int = 0
 )
