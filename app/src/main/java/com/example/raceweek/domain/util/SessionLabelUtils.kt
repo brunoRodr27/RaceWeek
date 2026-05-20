@@ -18,8 +18,8 @@ fun String.toSessionLabel(): String = when (this.lowercase()) {
     "practiceone22"   -> "Treino Livre 1 (2/2)"
     "practiceotwo12"  -> "Treino Livre 2 (1/2)"
     "practiceotwo22"  -> "Treino Livre 2 (2/2)"
-    "practiceothree12"-> "Treino Livre 3 (1/2)"
-    "practiceothree22"-> "Treino Livre 3 (2/2)"
+    "practicethree12" -> "Treino Livre 3 (1/2)"
+    "practicethree22" -> "Treino Livre 3 (2/2)"
     "practicesix"     -> "Treino Livre 6"
     "practiceseven"   -> "Treino Livre 7"
     else              -> this.replaceFirstChar { it.uppercase() }
